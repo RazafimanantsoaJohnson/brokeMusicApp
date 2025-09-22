@@ -36,7 +36,6 @@ func TestFetchAlbum(t *testing.T) {
 		t.Errorf("%s", err)
 	}
 
-	t.Errorf("e")
 }
 
 func TestFetchAlbumTracks(t *testing.T) {
@@ -51,5 +50,4 @@ func TestFetchAlbumTracks(t *testing.T) {
 		t.Errorf("%s", err)
 	}
 
-	t.Errorf("e")
 }
