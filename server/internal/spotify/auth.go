@@ -8,15 +8,15 @@ import (
 	"strings"
 )
 
-type authResponse struct {
+type AuthResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int    `json:"expires_in"`
 	Err         string `json:"error"`
 }
 
-func Authenticate(clientId, clientSecret string) (authResponse, error) {
-	authRes := authResponse{}
+func Authenticate(clientId, clientSecret string) (AuthResponse, error) {
+	authRes := AuthResponse{}
 	reqBody := fmt.Sprintf("grant_type=client_credentials&client_id=%s&client_secret=%s", clientId, clientSecret)
 	req, err := http.NewRequest("POST", AuthUrl, strings.NewReader(reqBody))
 	if err != nil {

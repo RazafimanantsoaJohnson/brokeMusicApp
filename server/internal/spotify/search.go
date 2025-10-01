@@ -49,6 +49,9 @@ func Search(accessToken, albumName string) (SearchResponse, error) {
 		return searchRes, err
 	}
 	defer res.Body.Close()
+	if res.StatusCode >= 400 && res.StatusCode <= 499 {
+		return searchRes, fmt.Errorf(UnvalidAuthErrorMessage)
+	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -59,8 +62,6 @@ func Search(accessToken, albumName string) (SearchResponse, error) {
 	if err != nil {
 		return searchRes, err
 	}
-
-	fmt.Println(searchRes)
 
 	return searchRes, nil
 }
