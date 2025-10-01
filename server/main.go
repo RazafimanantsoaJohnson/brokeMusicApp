@@ -6,14 +6,16 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/spotify"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 type ApiConfig struct {
 	port                string
 	spotifyClientId     string
 	spotifyClientSecret string
-	spotifyAccessToken  string
+	spotifyAccessToken  spotify.AuthResponse //string
 }
 
 func main() {
@@ -41,6 +43,9 @@ func main() {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello handsum, thank you for doing this"))
 	})
+
+	mux.HandleFunc("/api/albums", config.HandleSearchAlbum)
+	mux.HandleFunc("/api/albums/{albumId}/tracks", config.HandleGetAlbumTracks)
 
 	server := &http.Server{
 		Addr:    ":" + config.port,
