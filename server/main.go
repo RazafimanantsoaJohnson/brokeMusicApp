@@ -1,11 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/spotify"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -16,6 +18,7 @@ type ApiConfig struct {
 	spotifyClientId     string
 	spotifyClientSecret string
 	spotifyAccessToken  spotify.AuthResponse //string
+	db                  *database.Queries
 }
 
 func main() {
@@ -24,6 +27,7 @@ func main() {
 	port := os.Getenv("PORT")
 	spotifyClientId := os.Getenv("SPOTIFY_CLIENTID")
 	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENTSECRET")
+	dbUrl := os.Getenv("DB_URL")
 
 	if port == "" {
 		log.Fatalf("No port number was provided for the server")
@@ -32,10 +36,17 @@ func main() {
 		log.Fatalf("No spotify credentials was provided")
 	}
 
+	connection, err := sql.Open("postgres", dbUrl)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	db := database.New(connection)
+
 	config := ApiConfig{
 		port:                port,
 		spotifyClientId:     spotifyClientId,
 		spotifyClientSecret: spotifyClientSecret,
+		db:                  db,
 	}
 
 	mux := http.NewServeMux()
