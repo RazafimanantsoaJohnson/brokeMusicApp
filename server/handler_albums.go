@@ -91,6 +91,11 @@ func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Reques
 	w.Write(jsonTracks)
 }
 
+func saveAlbumTracks(cfg *ApiConfig, tracks spotify.AlbumResponse) {
+	// before running this function we should check if we have any tracks for the album and only continue if not (they are always inserted together)
+
+}
+
 func (cfg *ApiConfig) renewSpotifyAuth() error {
 	authResponse, err := spotify.Authenticate(cfg.spotifyClientId, cfg.spotifyClientSecret)
 	if err != nil {
