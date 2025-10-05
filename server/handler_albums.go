@@ -53,42 +53,17 @@ func saveAlbumsInDB(cfg *ApiConfig, searchResponse spotify.SearchResponse) {
 			Name: album.Name,
 			// Artists: album.Artists,
 			Numberoftracks: int32(album.TotalTracks),
-			Releasedate:    sql.NullString{String: album.ReleaseDate},
-			Spotifyurl:     sql.NullString{String: album.AlbumUrl},
-			Coverimageurl:  sql.NullString{String: album.Images[1].Url},
+			Releasedate:    sql.NullString{String: album.ReleaseDate, Valid: true},
+			Spotifyurl:     sql.NullString{String: album.AlbumUrl, Valid: true},
+			Coverimageurl:  sql.NullString{String: album.Images[1].Url, Valid: true},
 		})
-		if err.Error() == "pq: duplicate key value violates unique constraint \"albums_pkey\"" {
+		if err != nil && err.Error() == "pq: duplicate key value violates unique constraint \"albums_pkey\"" {
 			// fmt.Println(err)
 			continue
-		} else {
+		} else if err != nil {
 			log.Fatalf(err.Error()) // should keep the log somewhere instead of crash the system
 		}
 	}
-}
-
-func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Request) {
-	albumId := r.PathValue("albumId")
-	albumTracks, err := spotify.GetAlbumTracks(cfg.spotifyAccessToken.AccessToken, albumId)
-
-	if err != nil && err.Error() == spotify.UnvalidAuthErrorMessage {
-		err = cfg.renewSpotifyAuth() // we renew the auth and reset the err
-		albumTracks, err = spotify.GetAlbumTracks(cfg.spotifyAccessToken.AccessToken, albumId)
-	}
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	jsonTracks, err := json.Marshal(&albumTracks)
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	w.WriteHeader(200)
-	w.Write(jsonTracks)
 }
 
 func (cfg *ApiConfig) renewSpotifyAuth() error {
