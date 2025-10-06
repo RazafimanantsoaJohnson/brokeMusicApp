@@ -9,6 +9,7 @@ import (
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/spotify"
+	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/youtube"
 )
 
 type trackResponse struct {
@@ -27,6 +28,7 @@ type trackResponse struct {
 func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Request) {
 	albumId := r.PathValue("albumId")
 
+	queriedAlbum, err := cfg.db.GetAlbumFromSpotifyId(context.Background(), albumId)
 	result, areTracksLoaded, err := fetchAlbumTracks(cfg, albumId)
 	if err != nil {
 		w.WriteHeader(500)
@@ -48,7 +50,7 @@ func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Reques
 	albumTracks, err := spotify.GetAlbumTracks(cfg.spotifyAccessToken.AccessToken, albumId)
 
 	if !areTracksLoaded {
-		go saveAlbumTracksInDB(cfg, albumId, albumTracks)
+		go saveAlbumTracksInDB(cfg, albumId, albumTracks, queriedAlbum)
 	}
 
 	// return
@@ -102,11 +104,16 @@ func fetchAlbumTracks(cfg *ApiConfig, albumId string) ([]trackResponse, bool, er
 	return result, true, nil
 }
 
-func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumResponse) error {
+func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumResponse, album database.GetAlbumFromSpotifyIdRow) error {
 	fmt.Println("We are saving the tracks in DB")
 	for i := range tracks.Tracks.Items {
 		track := tracks.Tracks.Items[i]
-		err := cfg.db.InsertAlbumTrack(context.Background(), database.InsertAlbumTrackParams{
+		searchQuery := fmt.Sprintf("%s - %s", album.Artists.String, track.Name)
+		ytSearchResult, err := youtube.Search(cfg.ytApiKey, searchQuery)
+		if err != nil {
+			return err
+		}
+		err = cfg.db.InsertAlbumTrack(context.Background(), database.InsertAlbumTrackParams{
 			Name:            track.Name,
 			Tracknumber:     sql.NullInt32{Int32: int32(track.TrackNumber), Valid: true},
 			Isexplicit:      sql.NullBool{Bool: track.Explicit, Valid: true},
@@ -114,6 +121,7 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 			Spotifyid:       sql.NullString{String: track.Id, Valid: true},
 			Spotifyduration: sql.NullInt32{Int32: int32(track.Duration), Valid: true},
 			Spotifyuri:      sql.NullString{String: track.TrackUri, Valid: true},
+			Youtubeid:       sql.NullString{String: ytSearchResult.Items[0].Id.VideoId, Valid: true},
 		})
 		if err != nil {
 			return err

@@ -17,6 +17,7 @@ type ApiConfig struct {
 	port                string
 	spotifyClientId     string
 	spotifyClientSecret string
+	ytApiKey            string
 	spotifyAccessToken  spotify.AuthResponse //string
 	db                  *database.Queries
 }
@@ -27,6 +28,7 @@ func main() {
 	port := os.Getenv("PORT")
 	spotifyClientId := os.Getenv("SPOTIFY_CLIENTID")
 	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENTSECRET")
+	ytApiKey := os.Getenv("YOUTUBE_APIKEY")
 	dbUrl := os.Getenv("DB_URL")
 
 	if port == "" {
@@ -46,6 +48,7 @@ func main() {
 		port:                port,
 		spotifyClientId:     spotifyClientId,
 		spotifyClientSecret: spotifyClientSecret,
+		ytApiKey:            ytApiKey,
 		db:                  db,
 	}
 

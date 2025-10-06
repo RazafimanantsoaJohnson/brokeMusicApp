@@ -56,9 +56,9 @@ func saveAlbumsInDB(cfg *ApiConfig, searchResponse spotify.SearchResponse) {
 			Releasedate:    sql.NullString{String: album.ReleaseDate, Valid: true},
 			Spotifyurl:     sql.NullString{String: album.AlbumUrl, Valid: true},
 			Coverimageurl:  sql.NullString{String: album.Images[1].Url, Valid: true},
+			Artists:        sql.NullString{String: album.Artists[0].Name, Valid: true},
 		})
 		if err != nil && err.Error() == "pq: duplicate key value violates unique constraint \"albums_pkey\"" {
-			// fmt.Println(err)
 			continue
 		} else if err != nil {
 			log.Fatalf(err.Error()) // should keep the log somewhere instead of crash the system

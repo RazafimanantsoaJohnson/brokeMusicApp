@@ -29,7 +29,7 @@ func TestSearchYoutubeVideo(t *testing.T) {
 		"Frank Ocean - Wiseman",
 	}
 	for c := range cases {
-		err := Search(apiKey, cases[c])
+		_, err := Search(apiKey, cases[c])
 
 		if err != nil {
 			t.Error(err)

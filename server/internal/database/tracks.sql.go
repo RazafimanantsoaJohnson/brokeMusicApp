@@ -54,8 +54,8 @@ func (q *Queries) FetchAlbumTracks(ctx context.Context, albumid sql.NullString) 
 }
 
 const insertAlbumTrack = `-- name: InsertAlbumTrack :exec
-INSERT INTO tracks (id, isAvailable,name, trackNumber,spotifyId,spotifyDuration, spotifyUri, isExplicit, albumId)
-VALUES (GEN_RANDOM_UUID(), TRUE, $1, $2, $3, $4, $5, $6, $7)
+INSERT INTO tracks (id, isAvailable,name, trackNumber,spotifyId,spotifyDuration, spotifyUri, isExplicit, albumId, youtubeid)
+VALUES (GEN_RANDOM_UUID(), TRUE, $1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type InsertAlbumTrackParams struct {
@@ -66,6 +66,7 @@ type InsertAlbumTrackParams struct {
 	Spotifyuri      sql.NullString
 	Isexplicit      sql.NullBool
 	Albumid         sql.NullString
+	Youtubeid       sql.NullString
 }
 
 func (q *Queries) InsertAlbumTrack(ctx context.Context, arg InsertAlbumTrackParams) error {
@@ -77,6 +78,7 @@ func (q *Queries) InsertAlbumTrack(ctx context.Context, arg InsertAlbumTrackPara
 		arg.Spotifyuri,
 		arg.Isexplicit,
 		arg.Albumid,
+		arg.Youtubeid,
 	)
 	return err
 }

@@ -52,3 +52,28 @@ func (q *Queries) CreateAlbum(ctx context.Context, arg CreateAlbumParams) (Album
 	)
 	return i, err
 }
+
+const getAlbumFromSpotifyId = `-- name: GetAlbumFromSpotifyId :one
+SELECT id, name, coverimageurl, artists,numberOfTracks FROM albums WHERE ID = $1 LIMIT 1
+`
+
+type GetAlbumFromSpotifyIdRow struct {
+	ID             string
+	Name           string
+	Coverimageurl  sql.NullString
+	Artists        sql.NullString
+	Numberoftracks int32
+}
+
+func (q *Queries) GetAlbumFromSpotifyId(ctx context.Context, id string) (GetAlbumFromSpotifyIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getAlbumFromSpotifyId, id)
+	var i GetAlbumFromSpotifyIdRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Coverimageurl,
+		&i.Artists,
+		&i.Numberoftracks,
+	)
+	return i, err
+}
