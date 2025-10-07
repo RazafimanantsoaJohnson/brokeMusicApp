@@ -113,6 +113,14 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 		if err != nil {
 			return err
 		}
+		// launching yt-dlp task
+		mutex.Lock()
+		pushTask(&Tasks, YtDlpTask{
+			YoutubeId: ytSearchResult.Items[0].Id.VideoId,
+			Priority:  0,
+		})
+		mutex.Unlock()
+
 		err = cfg.db.InsertAlbumTrack(context.Background(), database.InsertAlbumTrackParams{
 			Name:            track.Name,
 			Tracknumber:     sql.NullInt32{Int32: int32(track.TrackNumber), Valid: true},
