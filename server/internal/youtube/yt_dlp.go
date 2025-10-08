@@ -43,8 +43,8 @@ func CallYtDlpCmd(urls []string) ([]YtDlpExtractedJson, error) {
 		return result, err
 	}
 
-	fmt.Println("Index new line: ", strings.Index(txtCmdOutput, "\n"))
-	fmt.Println("Number of lines: ", strings.Count(txtCmdOutput, "\n"))
+	// fmt.Println("Index new line: ", strings.Index(txtCmdOutput, "\n"))
+	// fmt.Println("Number of lines: ", strings.Count(txtCmdOutput, "\n"))
 	if !strings.Contains(txtCmdOutput, "\n") {
 		jsonStringOutput = fmt.Sprintf("[%v]", txtCmdOutput)
 		err = json.Unmarshal([]byte(jsonStringOutput), &result)

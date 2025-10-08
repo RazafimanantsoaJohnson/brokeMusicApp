@@ -108,12 +108,13 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 	fmt.Println("We are saving the tracks in DB")
 	for i := range tracks.Tracks.Items {
 		track := tracks.Tracks.Items[i]
-		searchQuery := fmt.Sprintf("%s - %s", album.Artists.String, track.Name)
+		searchQuery := fmt.Sprintf("%s %s", album.Artists.String, track.Name)
 		ytSearchResult, err := youtube.Search(cfg.ytApiKey, searchQuery)
 		if err != nil {
 			return err
 		}
 		// launching yt-dlp task
+		fmt.Println("Current Trackname: ", track.Name)
 		mutex.Lock()
 		pushTask(&Tasks, YtDlpTask{
 			YoutubeId: ytSearchResult.Items[0].Id.VideoId,

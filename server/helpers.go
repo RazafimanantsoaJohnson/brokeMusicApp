@@ -38,7 +38,7 @@ func pushTask(tasks *[]YtDlpTask, newTask YtDlpTask) {
 			*tasks = append([]YtDlpTask{newTask}, tasksCp...) // put it first
 			return
 		}
-		if v.Priority == 0 {
+		if v.Priority > 0 {
 			indexOfInsertion = i
 			highPriorities := tasksCp[:indexOfInsertion]
 			lowPriorities := tasksCp[indexOfInsertion:]
@@ -46,21 +46,6 @@ func pushTask(tasks *[]YtDlpTask, newTask YtDlpTask) {
 			*tasks = append((*tasks), lowPriorities...)
 		}
 	}
-}
-
-func popTask(tasks []YtDlpTask, taskToRemove YtDlpTask) {
-	indexOfTaskToRemove := 0
-	for i, v := range tasks {
-		if v.YoutubeId == taskToRemove.YoutubeId {
-			indexOfTaskToRemove = i
-		}
-	}
-	if indexOfTaskToRemove == 0 {
-
-	}
-	beforeTask := tasks[:indexOfTaskToRemove]
-	afterTask := tasks[indexOfTaskToRemove+1:]
-	tasks = append(beforeTask, afterTask...)
 }
 
 func pop(tasks *[]YtDlpTask) YtDlpTask { // the '0' task will always be the biggest priority
@@ -83,6 +68,13 @@ func StartWorkerPool() {
 	}
 
 	go scheduler()
+
+	go func() {
+		// simulation
+		receivedTaskChannel := <-TaskChannel
+		fmt.Println(receivedTaskChannel)
+		fmt.Println(Tasks)
+	}()
 }
 
 func scheduler() {
@@ -101,7 +93,6 @@ func scheduler() {
 }
 
 func worker(id int) {
-	fmt.Printf("WORKER %d READY TO WORK\n", id)
 	for task := range TaskChannel {
 		// we are here supposing we are only passing one video per worker
 		fmt.Printf("Worker %v is treating video %v ()\n", id, task.YoutubeId)
@@ -113,7 +104,8 @@ func worker(id int) {
 			result.err = err
 		}
 		result.result = extractedJson[0]
-		task.ResultChan <- result
 		fmt.Printf("Worker %v finished treating video %v \n", id, task.YoutubeId)
+		fmt.Println("Extracted Video :", result.result.Title, "\t(good job worker)")
+		task.ResultChan <- result
 	}
 }
