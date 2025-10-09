@@ -38,6 +38,8 @@ type Track struct {
 	Albumid         sql.NullString
 	CreatedOn       time.Time
 	UpdatedOn       time.Time
+	Spotifyid       sql.NullString
+	Tracknumber     sql.NullInt32
 }
 
 type User struct {
