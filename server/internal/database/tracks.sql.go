@@ -8,10 +8,12 @@ package database
 import (
 	"context"
 	"database/sql"
+
+	"github.com/google/uuid"
 )
 
 const fetchAlbumTracks = `-- name: FetchAlbumTracks :many
-SELECT id, youtubeid, name, spotifyduration, spotifyuri, isexplicit, isavailable, youtubeurltype, youtubeurl, fileurl, albumid, created_on, updated_on, spotifyid, tracknumber FROM tracks WHERE  (albumId = $1)
+SELECT id, youtubeid, name, spotifyduration, spotifyuri, isexplicit, isavailable, youtubeurltype, youtubeurl, fileurl, albumid, created_on, updated_on, spotifyid, tracknumber FROM tracks WHERE  (albumId = $1) ORDER BY trackNumber
 `
 
 func (q *Queries) FetchAlbumTracks(ctx context.Context, albumid sql.NullString) ([]Track, error) {
@@ -53,6 +55,33 @@ func (q *Queries) FetchAlbumTracks(ctx context.Context, albumid sql.NullString) 
 	return items, nil
 }
 
+const fetchTrack = `-- name: FetchTrack :one
+SELECT id, youtubeid, name, spotifyduration, spotifyuri, isexplicit, isavailable, youtubeurltype, youtubeurl, fileurl, albumid, created_on, updated_on, spotifyid, tracknumber FROM tracks WHERE (id = $1)
+`
+
+func (q *Queries) FetchTrack(ctx context.Context, id uuid.UUID) (Track, error) {
+	row := q.db.QueryRowContext(ctx, fetchTrack, id)
+	var i Track
+	err := row.Scan(
+		&i.ID,
+		&i.Youtubeid,
+		&i.Name,
+		&i.Spotifyduration,
+		&i.Spotifyuri,
+		&i.Isexplicit,
+		&i.Isavailable,
+		&i.Youtubeurltype,
+		&i.Youtubeurl,
+		&i.Fileurl,
+		&i.Albumid,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+		&i.Spotifyid,
+		&i.Tracknumber,
+	)
+	return i, err
+}
+
 const insertAlbumTrack = `-- name: InsertAlbumTrack :exec
 INSERT INTO tracks (id, isAvailable,name, trackNumber,spotifyId,spotifyDuration, spotifyUri, isExplicit, albumId, youtubeid)
 VALUES (GEN_RANDOM_UUID(), TRUE, $1, $2, $3, $4, $5, $6, $7, $8)
@@ -81,4 +110,36 @@ func (q *Queries) InsertAlbumTrack(ctx context.Context, arg InsertAlbumTrackPara
 		arg.Youtubeid,
 	)
 	return err
+}
+
+const insertTrackYoutubeUrl = `-- name: InsertTrackYoutubeUrl :one
+UPDATE tracks SET youtubeUrl= $2 WHERE (id=$1) RETURNING id, youtubeid, name, spotifyduration, spotifyuri, isexplicit, isavailable, youtubeurltype, youtubeurl, fileurl, albumid, created_on, updated_on, spotifyid, tracknumber
+`
+
+type InsertTrackYoutubeUrlParams struct {
+	ID         uuid.UUID
+	Youtubeurl sql.NullString
+}
+
+func (q *Queries) InsertTrackYoutubeUrl(ctx context.Context, arg InsertTrackYoutubeUrlParams) (Track, error) {
+	row := q.db.QueryRowContext(ctx, insertTrackYoutubeUrl, arg.ID, arg.Youtubeurl)
+	var i Track
+	err := row.Scan(
+		&i.ID,
+		&i.Youtubeid,
+		&i.Name,
+		&i.Spotifyduration,
+		&i.Spotifyuri,
+		&i.Isexplicit,
+		&i.Isavailable,
+		&i.Youtubeurltype,
+		&i.Youtubeurl,
+		&i.Fileurl,
+		&i.Albumid,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+		&i.Spotifyid,
+		&i.Tracknumber,
+	)
+	return i, err
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/spotify"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/youtube"
+	"github.com/google/uuid"
 )
 
 type trackResponse struct {
@@ -74,6 +75,40 @@ func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Reques
 	fmt.Println("we are returning tracks from spotify")
 	w.WriteHeader(200)
 	w.Write(jsonTracks)
+}
+
+func (cfg *ApiConfig) HandleGetTrack(w http.ResponseWriter, r *http.Request) {
+	trackId := r.PathValue("trackId")
+	id, err := uuid.Parse(trackId)
+	if err != nil {
+		w.WriteHeader(400)
+		w.Write([]byte("the provided track ID is not valid"))
+	}
+	dbTrack, err := cfg.db.FetchTrack(context.Background(), id)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+	}
+
+	if !dbTrack.Youtubeurl.Valid {
+		resultChan := make(chan YtDlpTaskResult)
+		mutex.Lock()
+		pushTask(&Tasks, YtDlpTask{
+			YoutubeId:  dbTrack.Youtubeid.String,
+			Priority:   1,
+			ResultChan: resultChan,
+		})
+		mutex.Unlock()
+
+		extracted := <-resultChan
+		fmt.Println(extracted.result.Formats[0].Format, extracted.result.Formats[0].Url)
+
+		dbTrack.Youtubeurl.Valid = true
+		dbTrack.Youtubeurl.String = "here is the extracted value boy"
+	}
+
+	returnJson(w, dbTrack)
+	// w.Write()
 }
 
 func fetchAlbumTracks(cfg *ApiConfig, albumId string) ([]trackResponse, bool, error) {

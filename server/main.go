@@ -61,6 +61,7 @@ func main() {
 
 	mux.HandleFunc("/api/albums", config.HandleSearchAlbum)
 	mux.HandleFunc("/api/albums/{albumId}/tracks", config.HandleGetAlbumTracks)
+	mux.HandleFunc("/api/albums/{albumId}/tracks/{trackId}", config.HandleGetTrack)
 
 	server := &http.Server{
 		Addr:    ":" + config.port,

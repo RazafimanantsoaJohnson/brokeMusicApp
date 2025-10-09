@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/youtube"
@@ -58,9 +60,17 @@ func pop(tasks *[]YtDlpTask) YtDlpTask { // the '0' task will always be the bigg
 	return task
 }
 
-// func returnJson() {
+func returnJson[T interface{}](w http.ResponseWriter, value T) {
+	jsonValue, err := json.Marshal(value)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
-// }
+	w.WriteHeader(200)
+	w.Write(jsonValue)
+}
 
 func StartWorkerPool() {
 	for i := 0; i < NumWorkers; i++ {
