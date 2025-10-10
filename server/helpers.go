@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/youtube"
@@ -70,6 +72,26 @@ func returnJson[T interface{}](w http.ResponseWriter, value T) {
 
 	w.WriteHeader(200)
 	w.Write(jsonValue)
+}
+
+func downloadFile(url string) (bool, error) { // we probably don't want to see the errors
+	tmpFile, err := os.Create("tracks_tmp/test.webm")
+	if err != nil {
+		return false, err
+	}
+	defer tmpFile.Close()
+	testUrl := `https://rr3---sn-h50gpup0nuxaxjvh-hg0d.googlevideo.com/videoplayback?expire=1760099866&ei=uqnoaJ7GCZWXsvQPj8eRqAU&ip=102.117.235.41&id=o-AERuKwKJRRUKvqo62JGC8a-PghYFIb8U2ghPijhqWc1g&itag=251&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1760078266%2C&mh=S2&mm=31%2C29&mn=sn-h50gpup0nuxaxjvh-hg0d%2Csn-hc57enee&ms=au%2Crdu&mv=m&mvi=3&pl=21&rms=au%2Cau&initcwndbps=2227500&bui=ATw7iSUMp6lzlWKoC3yVNz_z0qwswxOr25xfDe2wgQeY6dmpGJxPNUNn-Hil6AHvPv13aER_ymYN3ADn&vprv=1&svpuc=1&mime=audio%2Fwebm&ns=JSn06xFfeWmjEMBug9rUND0Q&rqh=1&gir=yes&clen=5045095&dur=308.721&lmt=1739333989535137&mt=1760077755&fvip=5&keepalive=yes&lmw=1&fexp=51557447%2C51565116%2C51565681%2C51580970&c=TVHTML5&sefc=1&txp=4532534&n=ClSoVRuS8uDFJQ&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRgIhAM8vM4kljHkEuP1z_Inb3gbGsNOMuNKujr9WfGTNN77lAiEAnAyXFD9Z9Rh4kk2DOJi8r6VjkNt-30pac15E9SQWHKI%3D&sig=AJfQdSswRQIhANc90GdSRlb417uwfBn149LY9xyMMEz6TGHq-HZrxYO0AiBVeevVvSKutfPUITTCUzIVxX5jaM5PRTvzeBepq1xgkw%3D%3D`
+	response, err := http.Get(testUrl)
+	if err != nil {
+		return false, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return false, err
+	}
+	io.Copy(tmpFile, response.Body)
+	return true, nil
 }
 
 func StartWorkerPool() {
