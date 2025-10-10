@@ -150,14 +150,8 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 		}
 		// launching yt-dlp task
 		fmt.Println("Current Trackname: ", track.Name)
-		mutex.Lock()
-		pushTask(&Tasks, YtDlpTask{
-			YoutubeId: ytSearchResult.Items[0].Id.VideoId,
-			Priority:  0,
-		})
-		mutex.Unlock()
 
-		err = cfg.db.InsertAlbumTrack(context.Background(), database.InsertAlbumTrackParams{
+		newTrack, err := cfg.db.InsertAlbumTrack(context.Background(), database.InsertAlbumTrackParams{
 			Name:            track.Name,
 			Tracknumber:     sql.NullInt32{Int32: int32(track.TrackNumber), Valid: true},
 			Isexplicit:      sql.NullBool{Bool: track.Explicit, Valid: true},
@@ -170,6 +164,14 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 		if err != nil {
 			return err
 		}
+
+		mutex.Lock()
+		pushTask(&Tasks, YtDlpTask{
+			YoutubeId: ytSearchResult.Items[0].Id.VideoId,
+			TrackId:   newTrack.ID,
+			Priority:  0,
+		})
+		mutex.Unlock()
 	}
 	return nil
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,13 +10,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/youtube"
+	"github.com/google/uuid"
 )
 
 type YtDlpTask struct {
-	YoutubeId string
-	// TrackId    uuid.UUID // the id in DB
-	Priority   int // should just be 0,1  (or 1,2)
+	YoutubeId  string
+	TrackId    uuid.UUID // the id in DB
+	Priority   int       // should just be 0,1  (or 1,2)
 	ResultChan chan YtDlpTaskResult
 }
 
@@ -94,9 +98,9 @@ func downloadFile(url string) (bool, error) { // we probably don't want to see t
 	return true, nil
 }
 
-func StartWorkerPool() {
+func StartWorkerPool(cfg *ApiConfig) {
 	for i := 0; i < NumWorkers; i++ {
-		go worker(i)
+		go worker(i, cfg)
 	}
 
 	go scheduler()
@@ -124,10 +128,10 @@ func scheduler() {
 	}
 }
 
-func worker(id int) {
+func worker(id int, cfg *ApiConfig) {
 	for task := range TaskChannel {
 		// we are here supposing we are only passing one video per worker
-		fmt.Printf("Worker %v is treating video %v ()\n", id, task.YoutubeId)
+		fmt.Printf("Worker %v is treating video (%v)\n", id, task.YoutubeId)
 		videoUrl := fmt.Sprintf("%v?v=%v", youtubeBaseUrl, task.YoutubeId)
 		result := YtDlpTaskResult{}
 		urlParam := []string{videoUrl}
@@ -136,8 +140,14 @@ func worker(id int) {
 			result.err = err
 		}
 		result.result = extractedJson[0]
-		fmt.Printf("Worker %v finished treating video %v \n", id, task.YoutubeId)
-		fmt.Println("Extracted Video :", result.result.Title, "\t(good job worker)")
+		audioStreamingUrl := (youtube.GetAudioStreamingUrl(extractedJson[0])).Url
+		if task.ResultChan == nil {
+			cfg.db.InsertTrackYoutubeUrl(context.Background(), database.InsertTrackYoutubeUrlParams{
+				ID:         task.TrackId,
+				Youtubeurl: sql.NullString{String: audioStreamingUrl, Valid: true},
+			})
+			continue
+		}
 		task.ResultChan <- result
 	}
 }

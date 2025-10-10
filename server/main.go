@@ -24,7 +24,6 @@ type ApiConfig struct {
 
 func main() {
 	godotenv.Load(".env")
-	StartWorkerPool()
 
 	port := os.Getenv("PORT")
 	spotifyClientId := os.Getenv("SPOTIFY_CLIENTID")
@@ -52,6 +51,8 @@ func main() {
 		ytApiKey:            ytApiKey,
 		db:                  db,
 	}
+
+	StartWorkerPool(&config)
 
 	mux := http.NewServeMux()
 

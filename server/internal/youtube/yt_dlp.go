@@ -9,20 +9,23 @@ import (
 )
 
 type YtDlpExtractedJson struct {
-	Title   string `json:"title"`
-	Formats []struct {
-		FormatId string `json:"format_id"`
-		Url      string `json:"url"`
-		Ext      string `json:"ext"`
-		Format   string `json:"format"`
-		// FileSize int    `json:"filesize"`
-		// Quality  int    `json:"quality"`
-		// 	Height   int    `json:"height"`
-		// 	Width    int    `json:"width"`
-		// 	AudioExt string `json:"audio_ext"`
-	} `json:"formats"`
-	Thumbnail string `json:"thumbnail"`
-	Channel   string `json:"channel"`
+	Title     string        `json:"title"`
+	Formats   []YtDlpFormat `json:"formats"`
+	Thumbnail string        `json:"thumbnail"`
+	Channel   string        `json:"channel"`
+}
+
+type YtDlpFormat struct {
+	FormatId   string `json:"format_id"`
+	Url        string `json:"url"`
+	Ext        string `json:"ext"`
+	Format     string `json:"format"`
+	FormatNote string `json:"format_note"`
+	// FileSize int    `json:"filesize"`
+	// Quality  int    `json:"quality"`
+	// 	Height   int    `json:"height"`
+	// 	Width    int    `json:"width"`
+	// 	AudioExt string `json:"audio_ext"`
 }
 
 func CallYtDlpCmd(urls []string) ([]YtDlpExtractedJson, error) {
@@ -68,4 +71,18 @@ func CallYtDlpCmd(urls []string) ([]YtDlpExtractedJson, error) {
 	}
 
 	return result, nil
+}
+
+func GetAudioStreamingUrl(json YtDlpExtractedJson) YtDlpFormat {
+	result := YtDlpFormat{}
+	for _, format := range json.Formats {
+		if format.FormatNote == "medium" && format.FormatId == "140" { // m4a
+			result = format
+			break
+		}
+		if format.FormatId == "249" || format.Format == "250" || format.Format == "251" {
+			result = format
+		}
+	}
+	return result
 }

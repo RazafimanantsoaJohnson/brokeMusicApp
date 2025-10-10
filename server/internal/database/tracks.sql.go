@@ -82,9 +82,9 @@ func (q *Queries) FetchTrack(ctx context.Context, id uuid.UUID) (Track, error) {
 	return i, err
 }
 
-const insertAlbumTrack = `-- name: InsertAlbumTrack :exec
+const insertAlbumTrack = `-- name: InsertAlbumTrack :one
 INSERT INTO tracks (id, isAvailable,name, trackNumber,spotifyId,spotifyDuration, spotifyUri, isExplicit, albumId, youtubeid)
-VALUES (GEN_RANDOM_UUID(), TRUE, $1, $2, $3, $4, $5, $6, $7, $8)
+VALUES (GEN_RANDOM_UUID(), TRUE, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, youtubeid, name, spotifyduration, spotifyuri, isexplicit, isavailable, youtubeurltype, youtubeurl, fileurl, albumid, created_on, updated_on, spotifyid, tracknumber
 `
 
 type InsertAlbumTrackParams struct {
@@ -98,8 +98,8 @@ type InsertAlbumTrackParams struct {
 	Youtubeid       sql.NullString
 }
 
-func (q *Queries) InsertAlbumTrack(ctx context.Context, arg InsertAlbumTrackParams) error {
-	_, err := q.db.ExecContext(ctx, insertAlbumTrack,
+func (q *Queries) InsertAlbumTrack(ctx context.Context, arg InsertAlbumTrackParams) (Track, error) {
+	row := q.db.QueryRowContext(ctx, insertAlbumTrack,
 		arg.Name,
 		arg.Tracknumber,
 		arg.Spotifyid,
@@ -109,20 +109,6 @@ func (q *Queries) InsertAlbumTrack(ctx context.Context, arg InsertAlbumTrackPara
 		arg.Albumid,
 		arg.Youtubeid,
 	)
-	return err
-}
-
-const insertTrackYoutubeUrl = `-- name: InsertTrackYoutubeUrl :one
-UPDATE tracks SET youtubeUrl= $2 WHERE (id=$1) RETURNING id, youtubeid, name, spotifyduration, spotifyuri, isexplicit, isavailable, youtubeurltype, youtubeurl, fileurl, albumid, created_on, updated_on, spotifyid, tracknumber
-`
-
-type InsertTrackYoutubeUrlParams struct {
-	ID         uuid.UUID
-	Youtubeurl sql.NullString
-}
-
-func (q *Queries) InsertTrackYoutubeUrl(ctx context.Context, arg InsertTrackYoutubeUrlParams) (Track, error) {
-	row := q.db.QueryRowContext(ctx, insertTrackYoutubeUrl, arg.ID, arg.Youtubeurl)
 	var i Track
 	err := row.Scan(
 		&i.ID,
@@ -142,4 +128,18 @@ func (q *Queries) InsertTrackYoutubeUrl(ctx context.Context, arg InsertTrackYout
 		&i.Tracknumber,
 	)
 	return i, err
+}
+
+const insertTrackYoutubeUrl = `-- name: InsertTrackYoutubeUrl :exec
+UPDATE tracks SET youtubeUrl= $2 WHERE (id=$1)
+`
+
+type InsertTrackYoutubeUrlParams struct {
+	ID         uuid.UUID
+	Youtubeurl sql.NullString
+}
+
+func (q *Queries) InsertTrackYoutubeUrl(ctx context.Context, arg InsertTrackYoutubeUrlParams) error {
+	_, err := q.db.ExecContext(ctx, insertTrackYoutubeUrl, arg.ID, arg.Youtubeurl)
+	return err
 }
