@@ -15,13 +15,6 @@ func (cfg *ApiConfig) HandleSearchAlbum(w http.ResponseWriter, r *http.Request) 
 	queryParams := r.URL.Query()
 	searchQuery := queryParams.Get("query")
 	// We will probably want to execute a request -> get the answer, check if the response is 400; authenticate, save the token, redo the request
-	// authResponse, err := spotify.Authenticate(cfg.spotifyClientId, cfg.spotifyClientSecret)
-	// if err != nil {
-	// 	w.WriteHeader(500)
-	// 	w.Write([]byte(authResponse.Err))
-	// 	return
-	// }
-	// cfg.renewSpotifyAuth()
 	foundAlbums, err := spotify.Search(cfg.spotifyAccessToken.AccessToken, searchQuery)
 	if err != nil && err.Error() == spotify.UnvalidAuthErrorMessage {
 		err = cfg.renewSpotifyAuth() // we renew the auth and reset the err
@@ -61,7 +54,7 @@ func saveAlbumsInDB(cfg *ApiConfig, searchResponse spotify.SearchResponse) {
 		if err != nil && err.Error() == "pq: duplicate key value violates unique constraint \"albums_pkey\"" {
 			continue
 		} else if err != nil {
-			log.Fatalf(err.Error()) // should keep the log somewhere instead of crash the system
+			log.Fatal(err.Error()) // should keep the log somewhere instead of crash the system
 		}
 	}
 }
