@@ -30,6 +30,10 @@ func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Reques
 	albumId := r.PathValue("albumId")
 
 	queriedAlbum, err := cfg.db.GetAlbumFromSpotifyId(context.Background(), albumId)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+	}
 	result, areTracksLoaded, err := fetchAlbumTracks(cfg, albumId)
 	if err != nil {
 		w.WriteHeader(500)
@@ -95,20 +99,24 @@ func (cfg *ApiConfig) HandleGetTrack(w http.ResponseWriter, r *http.Request) {
 		mutex.Lock()
 		pushTask(&Tasks, YtDlpTask{
 			YoutubeId:  dbTrack.Youtubeid.String,
+			AlbumId:    dbTrack.Albumid.String,
 			Priority:   1,
 			ResultChan: resultChan,
 		})
 		mutex.Unlock()
 
 		extracted := <-resultChan
-		fmt.Println(extracted.result.Formats[0].Format, extracted.result.Formats[0].Url)
+		audioFormat := youtube.GetAudioStreamingUrl(extracted.result)
 
 		dbTrack.Youtubeurl.Valid = true
-		dbTrack.Youtubeurl.String = "here is the extracted value boy"
+		dbTrack.Youtubeurl.String = audioFormat.Url
 	}
 
 	returnJson(w, dbTrack)
-	// w.Write()
+	cfg.db.InsertTrackYoutubeUrl(context.Background(), database.InsertTrackYoutubeUrlParams{
+		ID:         dbTrack.ID,
+		Youtubeurl: dbTrack.Youtubeurl,
+	})
 }
 
 func fetchAlbumTracks(cfg *ApiConfig, albumId string) ([]trackResponse, bool, error) {
@@ -148,7 +156,6 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 		if err != nil {
 			return err
 		}
-		// launching yt-dlp task
 		fmt.Println("Current Trackname: ", track.Name)
 
 		newTrack, err := cfg.db.InsertAlbumTrack(context.Background(), database.InsertAlbumTrackParams{
@@ -165,11 +172,13 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 			return err
 		}
 
+		// launching yt-dlp task
 		mutex.Lock()
 		pushTask(&Tasks, YtDlpTask{
 			YoutubeId: ytSearchResult.Items[0].Id.VideoId,
-			TrackId:   newTrack.ID,
-			Priority:  0,
+			// AlbumId:   albumId,
+			TrackId:  newTrack.ID,
+			Priority: 0,
 		})
 		mutex.Unlock()
 	}

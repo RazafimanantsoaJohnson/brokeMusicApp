@@ -61,7 +61,7 @@ func saveAlbumsInDB(cfg *ApiConfig, searchResponse spotify.SearchResponse) {
 		if err != nil && err.Error() == "pq: duplicate key value violates unique constraint \"albums_pkey\"" {
 			continue
 		} else if err != nil {
-			log.Fatalf(err.Error()) // should keep the log somewhere instead of crash the system
+			log.Fatal(err.Error()) // should keep the log somewhere instead of crash the system
 		}
 	}
 }
