@@ -62,11 +62,11 @@ func main() {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello handsum, thank you for doing this"))
 	})
-	mux.HandleFunc("/api/signup", config.HandleSignup)
-	mux.HandleFunc("/api/signin", config.HandleSignin)
-	mux.HandleFunc("/api/albums", config.middlewareCheckAuth(config.HandleSearchAlbum))
-	mux.HandleFunc("/api/albums/{albumId}/tracks", config.middlewareCheckAuth(config.HandleGetAlbumTracks))
-	mux.HandleFunc("/api/albums/{albumId}/tracks/{trackId}", config.middlewareCheckAuth(config.HandleGetTrack))
+	mux.HandleFunc("POST /api/signup", config.HandleSignup)
+	mux.HandleFunc("POST /api/signin", config.HandleSignin)
+	mux.HandleFunc("GET /api/albums", config.middlewareCheckAuth(config.HandleSearchAlbum))
+	mux.HandleFunc("GET /api/albums/{albumId}/tracks", config.middlewareCheckAuth(config.HandleGetAlbumTracks))
+	mux.HandleFunc("GET /api/albums/{albumId}/tracks/{trackId}", config.middlewareCheckAuth(config.HandleGetTrack))
 
 	server := &http.Server{
 		Addr:    ":" + config.port,
