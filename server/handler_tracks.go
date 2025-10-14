@@ -83,6 +83,9 @@ func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Reques
 
 func (cfg *ApiConfig) HandleGetTrack(w http.ResponseWriter, r *http.Request) {
 	trackId := r.PathValue("trackId")
+	queryParams := r.URL.Query()
+	retryParam := queryParams.Get("retry")
+	isRetry := !(retryParam == "")
 	id, err := uuid.Parse(trackId)
 	if err != nil {
 		w.WriteHeader(400)
@@ -93,8 +96,8 @@ func (cfg *ApiConfig) HandleGetTrack(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
 	}
-
-	if !dbTrack.Youtubeurl.Valid {
+	// add a forced refresh
+	if !dbTrack.Youtubeurl.Valid || isRetry {
 		resultChan := make(chan YtDlpTaskResult)
 		mutex.Lock()
 		pushTask(&Tasks, YtDlpTask{
