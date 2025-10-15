@@ -54,11 +54,6 @@ func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Reques
 
 	albumTracks, err := spotify.GetAlbumTracks(cfg.spotifyAccessToken.AccessToken, albumId)
 
-	if !areTracksLoaded {
-		go saveAlbumTracksInDB(cfg, albumId, albumTracks, queriedAlbum)
-	}
-
-	// return
 	if err != nil && err.Error() == spotify.UnvalidAuthErrorMessage {
 		err = cfg.renewSpotifyAuth() // we renew the auth and reset the err
 		albumTracks, _ = spotify.GetAlbumTracks(cfg.spotifyAccessToken.AccessToken, albumId)
@@ -67,6 +62,10 @@ func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Reques
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
 		return
+	}
+
+	if !areTracksLoaded {
+		go saveAlbumTracksInDB(cfg, albumId, albumTracks, queriedAlbum)
 	}
 
 	jsonTracks, err := json.Marshal(&albumTracks.Tracks.Items)
@@ -115,7 +114,18 @@ func (cfg *ApiConfig) HandleGetTrack(w http.ResponseWriter, r *http.Request) {
 		dbTrack.Youtubeurl.String = audioFormat.Url
 	}
 
-	returnJson(w, dbTrack)
+	result := trackResponse{
+		Id:          dbTrack.ID.String(),
+		Name:        dbTrack.Name,
+		Duration:    int(dbTrack.Spotifyduration.Int32),
+		Explicit:    dbTrack.Isexplicit.Bool,
+		TrackNumber: int(dbTrack.Tracknumber.Int32),
+		IsAvailable: dbTrack.Isavailable,
+		YoutubeURL:  dbTrack.Youtubeurl.String,
+		FileURL:     dbTrack.Fileurl.String,
+	}
+
+	returnJson(w, result)
 	cfg.db.InsertTrackYoutubeUrl(context.Background(), database.InsertTrackYoutubeUrlParams{
 		ID:         dbTrack.ID,
 		Youtubeurl: dbTrack.Youtubeurl,
@@ -134,8 +144,7 @@ func fetchAlbumTracks(cfg *ApiConfig, albumId string) ([]trackResponse, bool, er
 		return result, false, nil
 	}
 
-	for i := range existingAlbumTracks {
-		tmpTrack := existingAlbumTracks[i]
+	for _, tmpTrack := range existingAlbumTracks {
 		result = append(result, trackResponse{
 			Id:          tmpTrack.ID.String(),
 			Name:        tmpTrack.Name,
@@ -179,9 +188,9 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 		mutex.Lock()
 		pushTask(&Tasks, YtDlpTask{
 			YoutubeId: ytSearchResult.Items[0].Id.VideoId,
-			// AlbumId:   albumId,
-			TrackId:  newTrack.ID,
-			Priority: 0,
+			AlbumId:   albumId,
+			TrackId:   newTrack.ID,
+			Priority:  0,
 		})
 		mutex.Unlock()
 	}

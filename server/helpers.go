@@ -94,23 +94,33 @@ func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 	// if we are unauthorized; run yt-dlp again
 	for task := range DownloadTaskChannel {
 		fmt.Println("Download worker is treating video: ", task.TrackId)
-		filePath := fmt.Sprintf("tracks_tmp/%v/%v", task.AlbumId, task.TrackId)
-		fileName := fmt.Sprintf("%v.%v", filePath, task.YoutubeStreamingFormat.Ext)
-		tmpFile, _ := os.Create(fileName) // will change to createTemp
-		// if err != nil {
-		// 	return false, err
-		// }
+		albumPath := fmt.Sprintf("%s/%s", BaseAlbumPath, task.AlbumId)
+		filePath := fmt.Sprintf("%s/%s/%s", BaseAlbumPath, task.AlbumId, task.TrackId)
+		fileName := fmt.Sprintf("%s.%s", filePath, task.YoutubeStreamingFormat.Ext)
+
+		_, err := os.Stat(albumPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				os.Mkdir(albumPath, 0770)
+			} else {
+				// should be a logging
+				fmt.Println(err)
+			}
+		}
+
+		fmt.Println(fileName)
+		tmpFile, err := os.Create(fileName) // will change to createTemp
+		if err != nil {
+			// should be a logging
+			fmt.Println(err)
+		}
 		// defer tmpFile.Close()
 		response, err := http.Get(task.YoutubeStreamingFormat.Url)
 		if err != nil {
 			fmt.Println(err)
 		}
-		// defer response.Body.Close()
 
-		// if response.StatusCode != http.StatusOK {
-		// 	return false, err
-		// }
-		if response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden {
+		if response == nil || (response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden) {
 			ytUrl := fmt.Sprintf("%s?v=%s", youtubeBaseUrl, task.YoutubeId)
 			err = youtube.DownloadVideo(ytUrl, filePath)
 			if err != nil {
@@ -124,7 +134,6 @@ func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 		tmpFile.Close()
 		response.Body.Close()
 		fmt.Println("Treatment is finished for video: ", task.TrackId)
-		continue
 
 		time.Sleep(10 * time.Second) // place 10 seconds of pause between 2 downloads for the same worker
 	}

@@ -10,3 +10,6 @@ SELECT * FROM tracks WHERE (id = $1);
 
 -- name: InsertTrackYoutubeUrl :exec
 UPDATE tracks SET youtubeUrl= $2 WHERE (id=$1);
+
+-- name: InsertTrackFileURL :exec
+UPDATE tracks SET fileUrl= $2 WHERE (id= $1);
