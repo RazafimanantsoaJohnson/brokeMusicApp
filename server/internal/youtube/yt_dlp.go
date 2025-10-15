@@ -73,6 +73,27 @@ func CallYtDlpCmd(urls []string) ([]YtDlpExtractedJson, error) {
 	return result, nil
 }
 
+func DownloadVideo(url, outputPath string) error {
+	fileName := fmt.Sprintf("%s.%%(ext)s", outputPath)
+
+	params := []string{"-f ba", url, "-o", fileName}
+	cmd := exec.Command("yt-dlp", params...)
+	cmdOutput, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+	stringOutput := string(cmdOutput)
+	downloadSuccessReg, err := regexp.Compile(downloadSuccessRegex)
+	if err != nil {
+		return err
+	}
+	fmt.Println(downloadSuccessReg.MatchString(stringOutput))
+	if !downloadSuccessReg.MatchString(stringOutput) {
+		return fmt.Errorf("something went wrong, not able to download video")
+	}
+	return nil
+}
+
 func GetAudioStreamingUrl(json YtDlpExtractedJson) YtDlpFormat {
 	result := YtDlpFormat{}
 	for _, format := range json.Formats {

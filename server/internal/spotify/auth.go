@@ -42,7 +42,7 @@ func Authenticate(clientId, clientSecret string) (AuthResponse, error) {
 	}
 
 	if authRes.Err != "" {
-		return authRes, fmt.Errorf(authRes.Err)
+		return authRes, fmt.Errorf("%v", authRes.Err)
 	}
 
 	return authRes, nil

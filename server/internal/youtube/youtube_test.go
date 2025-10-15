@@ -8,13 +8,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// func TestGetStreamUrl(t *testing.T) {
-// 	err := GetStreamUrl("https://www.youtube.com/watch?v=PVRbKHXwM58")
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// }
-
 func getCredentials() (apiKey string) {
 	godotenv.Load("../../.env")
 	apiKey = os.Getenv("YOUTUBE_APIKEY")
@@ -49,5 +42,13 @@ func TestYtDlpCmd(t *testing.T) {
 			fmt.Println(cases[c])
 			t.Error(err)
 		}
+	}
+}
+
+func Test(t *testing.T) {
+	downloadUrl := "https://www.youtube.com/watch?v=oCnotRXfR_M"
+	err := DownloadVideo(downloadUrl, "../../tracks_tmp/random_frank_ocean_song")
+	if err != nil {
+		t.Error(err)
 	}
 }

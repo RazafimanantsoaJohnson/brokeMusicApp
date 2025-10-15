@@ -58,7 +58,7 @@ func TestWorker(t *testing.T) {
 
 	mutex.Unlock()
 
-	time.Sleep(3 * time.Minute)
+	time.Sleep(1 * time.Minute)
 }
 
 // func TestDownload(t *testing.T) {

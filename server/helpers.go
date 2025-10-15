@@ -27,6 +27,7 @@ type YtDlpTask struct {
 type YtDownloadTask struct {
 	AlbumId                string
 	TrackId                string
+	YoutubeId              string
 	YoutubeStreamingFormat youtube.YtDlpFormat
 }
 
@@ -92,24 +93,40 @@ func returnJson[T interface{}](w http.ResponseWriter, value T) {
 func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 	// if we are unauthorized; run yt-dlp again
 	for task := range DownloadTaskChannel {
-		fileName := fmt.Sprintf("tracks_tmp/%v.%v", task.AlbumId, task.TrackId)
+		fmt.Println("Download worker is treating video: ", task.TrackId)
+		filePath := fmt.Sprintf("tracks_tmp/%v/%v", task.AlbumId, task.TrackId)
+		fileName := fmt.Sprintf("%v.%v", filePath, task.YoutubeStreamingFormat.Ext)
 		tmpFile, _ := os.Create(fileName) // will change to createTemp
 		// if err != nil {
 		// 	return false, err
 		// }
-		defer tmpFile.Close()
-		response, _ := http.Get(task.YoutubeStreamingFormat.Url)
-		// if err != nil {
-		// 	return false, err
-		// }
-		defer response.Body.Close()
+		// defer tmpFile.Close()
+		response, err := http.Get(task.YoutubeStreamingFormat.Url)
+		if err != nil {
+			fmt.Println(err)
+		}
+		// defer response.Body.Close()
 
 		// if response.StatusCode != http.StatusOK {
 		// 	return false, err
 		// }
+		if response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden {
+			ytUrl := fmt.Sprintf("%s?v=%s", youtubeBaseUrl, task.YoutubeId)
+			err = youtube.DownloadVideo(ytUrl, filePath)
+			if err != nil {
+				// should be a logging of err
+				fmt.Println(err)
+			}
+			continue
+		}
 		io.Copy(tmpFile, response.Body)
-		time.Sleep(10 * time.Second) // place 10 seconds of pause between 2 downloads for the same worker
 
+		tmpFile.Close()
+		response.Body.Close()
+		fmt.Println("Treatment is finished for video: ", task.TrackId)
+		continue
+
+		time.Sleep(10 * time.Second) // place 10 seconds of pause between 2 downloads for the same worker
 	}
 }
 
@@ -120,10 +137,10 @@ func StartWorkerPool(cfg *ApiConfig) {
 
 	go scheduler()
 
-	// for i := 0; i < NumDownloaderWorkers; i++ {
-	// 	go downloadFile(cfg)
-	// }
-	// go downloadsScheduler()
+	for i := 0; i < NumDownloaderWorkers; i++ {
+		go downloadFile(cfg)
+	}
+	go downloadsScheduler()
 }
 
 func scheduler() {
@@ -145,10 +162,12 @@ func downloadsScheduler() {
 	for {
 		mutex.Lock()
 		if len(DownloadTasks) > 0 {
+
 			task := pop(&DownloadTasks)
 			mutex.Unlock()
 			DownloadTaskChannel <- task
 		} else {
+			mutex.Unlock()
 			time.Sleep(10 * time.Second)
 			continue
 		}
@@ -173,11 +192,11 @@ func worker(id int, cfg *ApiConfig) {
 				Youtubeurl: sql.NullString{String: audioStreamingFormat.Url, Valid: true},
 			})
 
-			// DownloadTasks = append(DownloadTasks, YtDownloadTask{
-			// 	YoutubeStreamingFormat: audioStreamingFormat,
-			// 	AlbumId:                task.AlbumId,
-			// 	TrackId:                task.TrackId.String(),
-			// })
+			DownloadTasks = append(DownloadTasks, YtDownloadTask{
+				YoutubeStreamingFormat: audioStreamingFormat,
+				AlbumId:                task.AlbumId,
+				TrackId:                task.TrackId.String(),
+			})
 
 			continue
 		}
@@ -197,6 +216,7 @@ func (cfg *ApiConfig) middlewareCheckAuth(next func(http.ResponseWriter, *http.R
 		if err != nil {
 			w.WriteHeader(401)
 			w.Write([]byte(UnauthorizedErrorMessage))
+			return
 		}
 		next(w, r)
 	}
