@@ -130,6 +130,20 @@ func (q *Queries) InsertAlbumTrack(ctx context.Context, arg InsertAlbumTrackPara
 	return i, err
 }
 
+const insertTrackFileURL = `-- name: InsertTrackFileURL :exec
+UPDATE tracks SET fileUrl= $2 WHERE (id= $1)
+`
+
+type InsertTrackFileURLParams struct {
+	ID      uuid.UUID
+	Fileurl sql.NullString
+}
+
+func (q *Queries) InsertTrackFileURL(ctx context.Context, arg InsertTrackFileURLParams) error {
+	_, err := q.db.ExecContext(ctx, insertTrackFileURL, arg.ID, arg.Fileurl)
+	return err
+}
+
 const insertTrackYoutubeUrl = `-- name: InsertTrackYoutubeUrl :exec
 UPDATE tracks SET youtubeUrl= $2 WHERE (id=$1)
 `

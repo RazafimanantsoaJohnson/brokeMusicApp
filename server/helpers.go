@@ -26,7 +26,7 @@ type YtDlpTask struct {
 
 type YtDownloadTask struct {
 	AlbumId                string
-	TrackId                string
+	TrackId                uuid.UUID
 	YoutubeId              string
 	YoutubeStreamingFormat youtube.YtDlpFormat
 }
@@ -93,9 +93,9 @@ func returnJson[T interface{}](w http.ResponseWriter, value T) {
 func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 	// if we are unauthorized; run yt-dlp again
 	for task := range DownloadTaskChannel {
-		fmt.Println("Download worker is treating video: ", task.TrackId)
+		fmt.Println("Download worker is treating video: ", task.TrackId.String())
 		albumPath := fmt.Sprintf("%s/%s", BaseAlbumPath, task.AlbumId)
-		filePath := fmt.Sprintf("%s/%s/%s", BaseAlbumPath, task.AlbumId, task.TrackId)
+		filePath := fmt.Sprintf("%s/%s/%s", BaseAlbumPath, task.AlbumId, task.TrackId.String())
 		fileName := fmt.Sprintf("%s.%s", filePath, task.YoutubeStreamingFormat.Ext)
 
 		_, err := os.Stat(albumPath)
@@ -108,13 +108,6 @@ func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 			}
 		}
 
-		fmt.Println(fileName)
-		tmpFile, err := os.Create(fileName) // will change to createTemp
-		if err != nil {
-			// should be a logging
-			fmt.Println(err)
-		}
-		// defer tmpFile.Close()
 		response, err := http.Get(task.YoutubeStreamingFormat.Url)
 		if err != nil {
 			fmt.Println(err)
@@ -128,12 +121,29 @@ func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 				fmt.Println(err)
 			}
 			continue
-		}
-		io.Copy(tmpFile, response.Body)
+		} else {
+			tmpFile, err := os.Create(fileName) // will change to createTemp
+			if err != nil {
+				// should be a logging
+				fmt.Println(err)
+			}
+			io.Copy(tmpFile, response.Body)
 
-		tmpFile.Close()
-		response.Body.Close()
-		fmt.Println("Treatment is finished for video: ", task.TrackId)
+			tmpFile.Close()
+			response.Body.Close()
+			fmt.Println("Treatment is finished for video: ", task.TrackId)
+		}
+		workingDir, err := os.Getwd()
+		if err != nil {
+			// should be a logging
+			fmt.Println(err)
+		}
+		absolutePath := fmt.Sprintf("%s/%s", workingDir, fileName)
+
+		cfg.db.InsertTrackFileURL(context.Background(), database.InsertTrackFileURLParams{
+			ID:      task.TrackId,
+			Fileurl: sql.NullString{Valid: true, String: absolutePath},
+		})
 
 		time.Sleep(10 * time.Second) // place 10 seconds of pause between 2 downloads for the same worker
 	}
@@ -204,7 +214,7 @@ func worker(id int, cfg *ApiConfig) {
 			DownloadTasks = append(DownloadTasks, YtDownloadTask{
 				YoutubeStreamingFormat: audioStreamingFormat,
 				AlbumId:                task.AlbumId,
-				TrackId:                task.TrackId.String(),
+				TrackId:                task.TrackId,
 			})
 
 			continue
