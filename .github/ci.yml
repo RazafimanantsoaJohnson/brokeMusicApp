@@ -23,4 +23,5 @@ jobs:
 
       - name: Run server tests
         run: go test ./...
+        working-directory: server
 
