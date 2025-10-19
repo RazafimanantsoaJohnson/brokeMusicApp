@@ -50,7 +50,7 @@ func Search(accessToken, albumName string) (SearchResponse, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode >= 400 && res.StatusCode <= 499 {
-		return searchRes, fmt.Errorf(UnvalidAuthErrorMessage)
+		return searchRes, fmt.Errorf("%v", UnvalidAuthErrorMessage)
 	}
 
 	body, err := io.ReadAll(res.Body)

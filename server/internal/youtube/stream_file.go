@@ -39,6 +39,9 @@ func GetStreamUrl(videoUrl string) error {
 		return fmt.Errorf("unable to get the player url for the video")
 	}
 	_, err = downloadWebPage(playerUrl)
+	if err != nil {
+		return fmt.Errorf("%v", err)
+	}
 	fmt.Println("Player URL result: ", playerUrl)
 	return nil
 }

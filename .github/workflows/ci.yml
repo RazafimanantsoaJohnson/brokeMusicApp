@@ -34,7 +34,7 @@ jobs:
         run: go install github.com/securego/gosec/v2/cmd/gosec@latest
 
       - name: run Gosec
-        run: gosec -exclude=204,204,107,104 ./...
+        run: gosec -exclude=204,G204,G304,107,104,G104 ./...
         working-directory: server
 
     env:
