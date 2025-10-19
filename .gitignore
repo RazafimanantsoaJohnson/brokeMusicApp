@@ -1,2 +1,8 @@
 test*
 yt-dlp
+.env
+yt_response.json
+resp2.json
+yt_response.txt
+yt-dlp_response.json
+tracks_tmp/
