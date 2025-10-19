@@ -28,3 +28,10 @@ jobs:
         run: go test ./...
         working-directory: server
 
+    env:
+      SPOTIFY_CLIENTID: ${{secrets.SPOTIFY_CLIENTID}}
+      SPOTIFY_CLIENTSECRET: ${{secrets.SPOTIFY_CLIENTSECRET}}
+      PORT: 8000
+      YOUTUBE_APIKEY: ${{secrets.YOUTUBE_APIKEY}}
+      JWT_SECRET: ${{secrets.JWT_SECRET}}
+
