@@ -18,8 +18,11 @@ jobs:
         with:
           go-version: "1.23.0"
 
+      - name: Add execution on dependencies script
+        run: chmod +x ./dependencies.sh
+
       - name: Install Dependencies
-        run: run ./dependencies.sh
+        run: ./dependencies.sh
 
       - name: Run server tests
         run: go test ./...
