@@ -23,7 +23,10 @@ jobs:
 
       - name: Install Dependencies
         run: ./dependencies.sh
-
+      
+      - name: Add current_dir to path variable
+        run: echo $GITHUB_WORKSPACE >> $GITHUB_PATH
+        
       - name: Run server tests
         run: go test ./...
         working-directory: server
