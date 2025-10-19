@@ -82,6 +82,33 @@ func (q *Queries) FetchTrack(ctx context.Context, id uuid.UUID) (Track, error) {
 	return i, err
 }
 
+const getTrackFromId = `-- name: GetTrackFromId :one
+SELECT id, youtubeid, name, spotifyduration, spotifyuri, isexplicit, isavailable, youtubeurltype, youtubeurl, fileurl, albumid, created_on, updated_on, spotifyid, tracknumber FROM tracks WHERE id=$1 LIMIT 1
+`
+
+func (q *Queries) GetTrackFromId(ctx context.Context, id uuid.UUID) (Track, error) {
+	row := q.db.QueryRowContext(ctx, getTrackFromId, id)
+	var i Track
+	err := row.Scan(
+		&i.ID,
+		&i.Youtubeid,
+		&i.Name,
+		&i.Spotifyduration,
+		&i.Spotifyuri,
+		&i.Isexplicit,
+		&i.Isavailable,
+		&i.Youtubeurltype,
+		&i.Youtubeurl,
+		&i.Fileurl,
+		&i.Albumid,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+		&i.Spotifyid,
+		&i.Tracknumber,
+	)
+	return i, err
+}
+
 const insertAlbumTrack = `-- name: InsertAlbumTrack :one
 INSERT INTO tracks (id, isAvailable,name, trackNumber,spotifyId,spotifyDuration, spotifyUri, isExplicit, albumId, youtubeid)
 VALUES (GEN_RANDOM_UUID(), TRUE, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, youtubeid, name, spotifyduration, spotifyuri, isexplicit, isavailable, youtubeurltype, youtubeurl, fileurl, albumid, created_on, updated_on, spotifyid, tracknumber

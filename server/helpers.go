@@ -217,20 +217,29 @@ func worker(id int, cfg *ApiConfig) {
 		}
 		result.result = extractedJson[0]
 		audioStreamingFormat := youtube.GetAudioStreamingUrl(extractedJson[0])
+
+		tmp_track, err := cfg.db.GetTrackFromId(context.Background(), task.TrackId)
+		if err != nil {
+			// should be a logging
+			fmt.Println(err)
+		}
+		if !tmp_track.Fileurl.Valid {
+			DownloadTasks = append(DownloadTasks, YtDownloadTask{
+				YoutubeStreamingFormat: audioStreamingFormat,
+				AlbumId:                task.AlbumId,
+				TrackId:                task.TrackId,
+			})
+		}
+
 		if task.ResultChan == nil {
 			cfg.db.InsertTrackYoutubeUrl(context.Background(), database.InsertTrackYoutubeUrlParams{
 				ID:         task.TrackId,
 				Youtubeurl: sql.NullString{String: audioStreamingFormat.Url, Valid: true},
 			})
 
-			DownloadTasks = append(DownloadTasks, YtDownloadTask{
-				YoutubeStreamingFormat: audioStreamingFormat,
-				AlbumId:                task.AlbumId,
-				TrackId:                task.TrackId,
-			})
-
 			continue
 		}
+
 		task.ResultChan <- result
 	}
 }
