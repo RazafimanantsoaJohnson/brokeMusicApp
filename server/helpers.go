@@ -94,11 +94,16 @@ func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 	// if we are unauthorized; run yt-dlp again
 	for task := range DownloadTaskChannel {
 		fmt.Println("Download worker is treating video: ", task.TrackId.String())
-		albumPath := fmt.Sprintf("%s/%s", BaseAlbumPath, task.AlbumId)
-		filePath := fmt.Sprintf("%s/%s/%s", BaseAlbumPath, task.AlbumId, task.TrackId.String())
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		albumPath := fmt.Sprintf("%s/%s/%s", homeDir, BaseAlbumPath, task.AlbumId)
+		filePath := fmt.Sprintf("%s/%s", albumPath, task.TrackId.String())
 		fileName := fmt.Sprintf("%s.%s", filePath, task.YoutubeStreamingFormat.Ext)
 
-		_, err := os.Stat(albumPath)
+		_, err = os.Stat(albumPath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				os.Mkdir(albumPath, 0770)

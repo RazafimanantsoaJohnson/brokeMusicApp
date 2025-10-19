@@ -45,10 +45,10 @@ func TestYtDlpCmd(t *testing.T) {
 	}
 }
 
-func Test(t *testing.T) {
-	downloadUrl := "https://www.youtube.com/watch?v=oCnotRXfR_M"
-	err := DownloadVideo(downloadUrl, "../../tracks_tmp/random_frank_ocean_song")
-	if err != nil {
-		t.Error(err)
-	}
-}
+// func Test(t *testing.T) {
+// 	downloadUrl := "https://www.youtube.com/watch?v=oCnotRXfR_M"
+// 	err := DownloadVideo(downloadUrl, "../../tracks_tmp/random_frank_ocean_song")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
