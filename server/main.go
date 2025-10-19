@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/spotify"
@@ -69,10 +70,11 @@ func main() {
 	mux.HandleFunc("GET /api/albums/{albumId}/tracks/{trackId}", config.middlewareCheckAuth(config.HandleGetTrack))
 
 	server := &http.Server{
-		Addr:    ":" + config.port,
-		Handler: mux,
+		Addr:              ":" + config.port,
+		Handler:           mux,
+		ReadHeaderTimeout: 2 * time.Minute,
 	}
 
 	fmt.Printf("The server is running and listening to port %s\n", config.port)
-	server.ListenAndServe()
+	log.Fatal(server.ListenAndServe())
 }

@@ -41,7 +41,7 @@ func GetAlbumTracks(accessToken, albumId string) (AlbumResponse, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode >= 400 && res.StatusCode <= 499 {
-		return albumRes, fmt.Errorf(UnvalidAuthErrorMessage)
+		return albumRes, fmt.Errorf("%v", UnvalidAuthErrorMessage)
 	}
 
 	body, err := io.ReadAll(res.Body)

@@ -1,7 +1,6 @@
 package youtube
 
 const ytDlpGreedyJsonRegex = `\{.+\}`
-const youtubeBaseUrl = "https://www.youtube.com/watch"
 const youtubeAPIBaseURl = "https://www.googleapis.com/youtube/v3/search"
 
 // const ytDlpJsonRegex = `\{.+?\}`
