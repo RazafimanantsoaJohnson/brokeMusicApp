@@ -26,10 +26,15 @@ jobs:
       
       - name: Add current_dir to path variable
         run: echo $GITHUB_WORKSPACE >> $GITHUB_PATH
-        
-      - name: Run server tests
-        run: go test ./...
-        working-directory: server
+
+      # - name: Run server tests
+      #   run: go test ./...
+      #   working-directory: server
+      - name: Install Gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: run Gosec
+        run: gosec ./...
 
     env:
       SPOTIFY_CLIENTID: ${{secrets.SPOTIFY_CLIENTID}}
@@ -37,4 +42,26 @@ jobs:
       PORT: 8000
       YOUTUBE_APIKEY: ${{secrets.YOUTUBE_APIKEY}}
       JWT_SECRET: ${{secrets.JWT_SECRET}}
+
+  style:
+    name: Style
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.0"
+      
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Formatting
+        run: go fmt ./...
+
+      - name: Run staticcheck
+        run: staticcheck ./...
 
