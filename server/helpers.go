@@ -106,7 +106,10 @@ func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 		_, err = os.Stat(albumPath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				os.Mkdir(albumPath, 0770)
+				err = os.Mkdir(albumPath, 0750)
+				if err != nil {
+					fmt.Println(err)
+				}
 			} else {
 				// should be a logging
 				fmt.Println(err)
@@ -132,7 +135,11 @@ func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 				// should be a logging
 				fmt.Println(err)
 			}
-			io.Copy(tmpFile, response.Body)
+			_, err = io.Copy(tmpFile, response.Body)
+			if err != nil {
+				// should be a logging
+				fmt.Println(err)
+			}
 
 			tmpFile.Close()
 			response.Body.Close()
