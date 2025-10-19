@@ -35,7 +35,6 @@ jobs:
 
       - name: run Gosec
         run: gosec -exclude=G204,G304,G107,G104,G115 ./...
-        working-directory: server
 
     env:
       SPOTIFY_CLIENTID: ${{secrets.SPOTIFY_CLIENTID}}
@@ -59,12 +58,9 @@ jobs:
       
       - name: Install staticcheck
         run: go install honnef.co/go/tools/cmd/staticcheck@latest
-        working-directory: server
 
       - name: Formatting
         run: go fmt ./...
-        working-directory: server
 
       - name: Run staticcheck
         run: staticcheck ./...
-        working-directory: server
