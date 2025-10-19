@@ -58,10 +58,12 @@ jobs:
       
       - name: Install staticcheck
         run: go install honnef.co/go/tools/cmd/staticcheck@latest
+        working-directory: server
 
       - name: Formatting
         run: go fmt ./...
+        working-directory: server
 
       - name: Run staticcheck
         run: staticcheck ./...
-
+        working-directory: server
