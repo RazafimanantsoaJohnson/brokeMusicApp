@@ -8,7 +8,7 @@ const youtubeBaseUrl = "https://www.youtube.com/watch"
 const duplicateUserError = "pq: duplicate key value violates unique constraint"
 const UnauthorizedErrorMessage = "this user is not authorized to make this request"
 
-var BaseAlbumPath = "tracks_tmp"
+var BaseAlbumPath = "broke_music_app"
 
 var AuthTypes = []string{"SELF", "GOOGLE"}
 
