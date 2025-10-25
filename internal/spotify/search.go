@@ -30,6 +30,8 @@ type SearchResponse struct {
 				Type         string `json:"type"`
 				ArtistApiUrl string `json:"href"`
 			} `json:"artists"`
+			Artist     string `json:"artist"`
+			AlbumCover string `json:"album_cover"`
 		} `json:"items"`
 	} `json:"albums"`
 }
@@ -61,6 +63,10 @@ func Search(accessToken, albumName string) (SearchResponse, error) {
 	err = json.Unmarshal(body, &searchRes)
 	if err != nil {
 		return searchRes, err
+	}
+	for i, album := range searchRes.Albums.Items {
+		searchRes.Albums.Items[i].Artist = album.Artists[0].Name
+		searchRes.Albums.Items[i].AlbumCover = album.Images[0].Url
 	}
 
 	return searchRes, nil

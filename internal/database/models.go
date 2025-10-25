@@ -58,4 +58,6 @@ type UserAlbum struct {
 	Albumid      sql.NullString
 	Issaved      sql.NullBool
 	Isdownloaded sql.NullBool
+	CreatedOn    sql.NullTime
+	UpdatedOn    sql.NullTime
 }

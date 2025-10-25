@@ -9,10 +9,13 @@ VALUES (GEN_RANDOM_UUID(), TRUE, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;
 SELECT * FROM tracks WHERE (id = $1);
 
 -- name: InsertTrackYoutubeUrl :exec
-UPDATE tracks SET youtubeUrl= $2 WHERE (id=$1);
+UPDATE tracks SET youtubeUrl= $2, updated_on= NOW() WHERE (id=$1);
 
 -- name: InsertTrackFileURL :exec
-UPDATE tracks SET fileUrl= $2 WHERE (id= $1);
+UPDATE tracks SET fileUrl= $2, updated_on= NOW() WHERE (id= $1);
 
 -- name: GetTrackFromId :one
 SELECT * FROM tracks WHERE id=$1 LIMIT 1;
+
+-- name: SetTrackAsUnavailable :exec
+UPDATE tracks SET isAvailable = FALSE, updated_on= NOW() WHERE id=$1;

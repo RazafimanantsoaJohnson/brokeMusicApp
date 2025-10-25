@@ -158,7 +158,7 @@ func (q *Queries) InsertAlbumTrack(ctx context.Context, arg InsertAlbumTrackPara
 }
 
 const insertTrackFileURL = `-- name: InsertTrackFileURL :exec
-UPDATE tracks SET fileUrl= $2 WHERE (id= $1)
+UPDATE tracks SET fileUrl= $2, updated_on= NOW() WHERE (id= $1)
 `
 
 type InsertTrackFileURLParams struct {
@@ -172,7 +172,7 @@ func (q *Queries) InsertTrackFileURL(ctx context.Context, arg InsertTrackFileURL
 }
 
 const insertTrackYoutubeUrl = `-- name: InsertTrackYoutubeUrl :exec
-UPDATE tracks SET youtubeUrl= $2 WHERE (id=$1)
+UPDATE tracks SET youtubeUrl= $2, updated_on= NOW() WHERE (id=$1)
 `
 
 type InsertTrackYoutubeUrlParams struct {
@@ -182,5 +182,14 @@ type InsertTrackYoutubeUrlParams struct {
 
 func (q *Queries) InsertTrackYoutubeUrl(ctx context.Context, arg InsertTrackYoutubeUrlParams) error {
 	_, err := q.db.ExecContext(ctx, insertTrackYoutubeUrl, arg.ID, arg.Youtubeurl)
+	return err
+}
+
+const setTrackAsUnavailable = `-- name: SetTrackAsUnavailable :exec
+UPDATE tracks SET isAvailable = FALSE, updated_on= NOW() WHERE id=$1
+`
+
+func (q *Queries) SetTrackAsUnavailable(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, setTrackAsUnavailable, id)
 	return err
 }

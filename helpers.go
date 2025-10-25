@@ -215,6 +215,19 @@ func worker(id int, cfg *ApiConfig) {
 		if err != nil {
 			result.err = err
 		}
+		if len(extractedJson) <= 0 {
+			err = cfg.db.SetTrackAsUnavailable(context.Background(), task.TrackId)
+			if err != nil {
+				// should be a logging
+				fmt.Println(err)
+			}
+			if task.ResultChan != nil {
+				task.ResultChan <- YtDlpTaskResult{
+					err: fmt.Errorf("unable to get the track's data"),
+				}
+			}
+		}
+
 		result.result = extractedJson[0]
 		audioStreamingFormat := youtube.GetAudioStreamingUrl(extractedJson[0])
 
