@@ -94,7 +94,11 @@ func HandleGetTrack(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, 
 	trackId := r.PathValue("trackId")
 	queryParams := r.URL.Query()
 	retryParam := queryParams.Get("retry")
-	isRetry := !(retryParam == "")
+	directStreamParam := queryParams.Get("directStream")
+
+	isRetry := (retryParam != "")
+	isDirectStream := (directStreamParam != "")
+
 	id, err := uuid.Parse(trackId)
 	if err != nil {
 		w.WriteHeader(400)
@@ -107,6 +111,18 @@ func HandleGetTrack(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, 
 		w.Write([]byte(err.Error()))
 		return
 	}
+
+	if isDirectStream && dbTrack.Fileurl.Valid {
+
+		err = serveFile(w, r, dbTrack)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+		}
+
+		return
+	}
+
 	// add a forced refresh
 	if !dbTrack.Youtubeurl.Valid || isRetry {
 		resultChan := make(chan YtDlpTaskResult)

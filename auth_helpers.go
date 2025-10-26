@@ -21,6 +21,7 @@ func (cfg *ApiConfig) middlewareCheckAuth(next func(*ApiConfig, uuid.UUID, http.
 			w.Write([]byte(UnauthorizedErrorMessage))
 			return
 		}
+
 		next(cfg, curUserId, w, r)
 	}
 }

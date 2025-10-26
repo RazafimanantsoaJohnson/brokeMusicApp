@@ -144,16 +144,10 @@ func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 			response.Body.Close()
 			fmt.Println("Treatment is finished for video: ", task.TrackId)
 		}
-		workingDir, err := os.Getwd()
-		if err != nil {
-			// should be a logging
-			fmt.Println(err)
-		}
-		absolutePath := fmt.Sprintf("%s/%s", workingDir, fileName)
 
 		cfg.db.InsertTrackFileURL(context.Background(), database.InsertTrackFileURLParams{
 			ID:      task.TrackId,
-			Fileurl: sql.NullString{Valid: true, String: absolutePath},
+			Fileurl: sql.NullString{Valid: true, String: fileName},
 		})
 
 		time.Sleep(10 * time.Second) // place 10 seconds of pause between 2 downloads for the same worker
@@ -254,4 +248,18 @@ func worker(id int, cfg *ApiConfig) {
 
 		task.ResultChan <- result
 	}
+}
+
+func serveFile(w http.ResponseWriter, r *http.Request, track database.Track) error {
+	file, err := os.Open(track.Fileurl.String)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	fileMetadata, err := file.Stat()
+	if err != nil {
+		return err
+	}
+	http.ServeContent(w, r, fileMetadata.Name(), fileMetadata.ModTime(), file)
+	return nil
 }
