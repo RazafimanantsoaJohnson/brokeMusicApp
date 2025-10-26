@@ -13,32 +13,33 @@ import (
 )
 
 const getUserRecentlyVisitedAlbums = `-- name: GetUserRecentlyVisitedAlbums :many
-SELECT albums.name, albums.id, albums.coverimageurl, albums.releasedate, albums.numberoftracks FROM user_album 
-INNER JOIN albums ON user_album.albumId=albums.id WHERE userId = $1 ORDER BY user_album.created_on DESC LIMIT 10
+
+SELECT id, name, coverimageurl, releasedate, artists, spotifyurl, jsontracklist, created_on, updated_on, numberoftracks FROM albums WHERE id IN (SELECT DISTINCT user_album.albumId FROM user_album WHERE user_album.userId = $1)
 `
 
-type GetUserRecentlyVisitedAlbumsRow struct {
-	Name           string
-	ID             string
-	Coverimageurl  sql.NullString
-	Releasedate    sql.NullString
-	Numberoftracks int32
-}
-
-func (q *Queries) GetUserRecentlyVisitedAlbums(ctx context.Context, userid uuid.NullUUID) ([]GetUserRecentlyVisitedAlbumsRow, error) {
+// SELECT DISTINCT user_album_join.albumId FROM
+//
+//	(SELECT user_album.albumId, albums.name, albums.id, albums.coverimageurl, albums.releasedate, albums.numberoftracks, user_album.created_on
+//	    FROM user_album INNER JOIN albums ON user_album.albumId=albums.id WHERE userId = $1 ORDER BY user_album.created_on DESC) AS user_album_join LIMIT 10;
+func (q *Queries) GetUserRecentlyVisitedAlbums(ctx context.Context, userid uuid.NullUUID) ([]Album, error) {
 	rows, err := q.db.QueryContext(ctx, getUserRecentlyVisitedAlbums, userid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetUserRecentlyVisitedAlbumsRow
+	var items []Album
 	for rows.Next() {
-		var i GetUserRecentlyVisitedAlbumsRow
+		var i Album
 		if err := rows.Scan(
-			&i.Name,
 			&i.ID,
+			&i.Name,
 			&i.Coverimageurl,
 			&i.Releasedate,
+			&i.Artists,
+			&i.Spotifyurl,
+			&i.Jsontracklist,
+			&i.CreatedOn,
+			&i.UpdatedOn,
 			&i.Numberoftracks,
 		); err != nil {
 			return nil, err

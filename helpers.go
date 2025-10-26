@@ -10,7 +10,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/auth"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/youtube"
 	"github.com/google/uuid"
@@ -254,23 +253,5 @@ func worker(id int, cfg *ApiConfig) {
 		}
 
 		task.ResultChan <- result
-	}
-}
-
-func (cfg *ApiConfig) middlewareCheckAuth(next func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		receivedToken, err := auth.GetBearerToken(r.Header)
-		if err != nil {
-			w.WriteHeader(401)
-			w.Write([]byte(UnauthorizedErrorMessage))
-			return
-		}
-		_, err = auth.ValidateJWT(receivedToken, cfg.jwtSecret)
-		if err != nil {
-			w.WriteHeader(401)
-			w.Write([]byte(UnauthorizedErrorMessage))
-			return
-		}
-		next(w, r)
 	}
 }

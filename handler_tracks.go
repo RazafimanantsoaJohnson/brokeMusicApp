@@ -26,7 +26,7 @@ type trackResponse struct {
 	FileURL     string `json:"file_url"`
 }
 
-func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Request) {
+func HandleGetAlbumTracks(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	albumId := r.PathValue("albumId")
 
 	queriedAlbum, err := cfg.db.GetAlbumFromSpotifyId(context.Background(), albumId)
@@ -75,12 +75,22 @@ func (cfg *ApiConfig) HandleGetAlbumTracks(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	err = cfg.db.SaveUserVisitedAlbum(context.Background(), database.SaveUserVisitedAlbumParams{
+		Userid:  uuid.NullUUID{Valid: true, UUID: curUserId},
+		Albumid: sql.NullString{Valid: true, String: albumId},
+	})
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	fmt.Println("we are returning tracks from spotify")
 	w.WriteHeader(200)
 	w.Write(jsonTracks)
 }
 
-func (cfg *ApiConfig) HandleGetTrack(w http.ResponseWriter, r *http.Request) {
+func HandleGetTrack(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	trackId := r.PathValue("trackId")
 	queryParams := r.URL.Query()
 	retryParam := queryParams.Get("retry")
@@ -89,11 +99,13 @@ func (cfg *ApiConfig) HandleGetTrack(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(400)
 		w.Write([]byte("the provided track ID is not valid"))
+		return
 	}
 	dbTrack, err := cfg.db.FetchTrack(context.Background(), id)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
+		return
 	}
 	// add a forced refresh
 	if !dbTrack.Youtubeurl.Valid || isRetry {
@@ -123,6 +135,16 @@ func (cfg *ApiConfig) HandleGetTrack(w http.ResponseWriter, r *http.Request) {
 		IsAvailable: dbTrack.Isavailable,
 		YoutubeURL:  dbTrack.Youtubeurl.String,
 		FileURL:     dbTrack.Fileurl.String,
+	}
+
+	err = cfg.db.SaveUserVisitedAlbum(context.Background(), database.SaveUserVisitedAlbumParams{
+		Userid:  uuid.NullUUID{Valid: true, UUID: curUserId},
+		Albumid: sql.NullString{Valid: true, String: dbTrack.Albumid.String},
+	})
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
 	}
 
 	returnJson(w, result)
@@ -165,10 +187,13 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 		track := tracks.Tracks.Items[i]
 		searchQuery := fmt.Sprintf("%s %s", album.Artists.String, track.Name)
 		ytSearchResult, err := youtube.Search(cfg.ytApiKey, searchQuery)
+		ytTrackId := sql.NullString{String: "", Valid: false}
 		if err != nil {
 			return err
 		}
-		fmt.Println("Current Trackname: ", track.Name)
+		if len(ytSearchResult.Items) > 0 {
+			ytTrackId = sql.NullString{String: ytSearchResult.Items[0].Id.VideoId, Valid: true}
+		}
 
 		newTrack, err := cfg.db.InsertAlbumTrack(context.Background(), database.InsertAlbumTrackParams{
 			Name:            track.Name,
@@ -178,12 +203,19 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 			Spotifyid:       sql.NullString{String: track.Id, Valid: true},
 			Spotifyduration: sql.NullInt32{Int32: int32(track.Duration), Valid: true},
 			Spotifyuri:      sql.NullString{String: track.TrackUri, Valid: true},
-			Youtubeid:       sql.NullString{String: ytSearchResult.Items[0].Id.VideoId, Valid: true},
+			Youtubeid:       ytTrackId,
 		})
 		if err != nil {
 			return err
 		}
 
+		if !ytTrackId.Valid {
+			err = cfg.db.SetTrackAsUnavailable(context.Background(), newTrack.ID)
+			if err != nil {
+				return err
+			}
+			return fmt.Errorf("unable to find track")
+		}
 		// launching yt-dlp task
 		mutex.Lock()
 		pushTask(&Tasks, YtDlpTask{

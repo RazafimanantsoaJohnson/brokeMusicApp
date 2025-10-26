@@ -9,9 +9,19 @@ import (
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/spotify"
+	"github.com/google/uuid"
 )
 
-func (cfg *ApiConfig) HandleSearchAlbum(w http.ResponseWriter, r *http.Request) {
+type UserVisitedAlbumResponse struct {
+	AlbumId        string `json:"album_id"`
+	Name           string `json:"album_name"`
+	CoverImageUrl  string `json:"album_cover_url"`
+	ReleaseDate    string `json:"release_date"`
+	NumberOfTracks int    `json:"number_of_tracks"`
+	CreatedOn      string `json:"created_on"`
+}
+
+func HandleSearchAlbum(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	searchQuery := queryParams.Get("query")
 	// We will probably want to execute a request -> get the answer, check if the response is 400; authenticate, save the token, redo the request
@@ -67,4 +77,26 @@ func (cfg *ApiConfig) renewSpotifyAuth() error {
 	cfg.spotifyAccessToken = authResponse
 
 	return nil
+}
+
+func HandleGetUserVisitedAlbums(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	userVisitedAlbums, err := cfg.db.GetUserRecentlyVisitedAlbums(context.Background(), uuid.NullUUID{Valid: true, UUID: curUserId})
+	result := []UserVisitedAlbumResponse{}
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	for _, userAlbum := range userVisitedAlbums {
+		result = append(result, UserVisitedAlbumResponse{
+			AlbumId:        userAlbum.ID,
+			Name:           userAlbum.Name,
+			CoverImageUrl:  userAlbum.Coverimageurl.String,
+			ReleaseDate:    userAlbum.Releasedate.String,
+			NumberOfTracks: int(userAlbum.Numberoftracks),
+		})
+	}
+
+	returnJson(w, result)
 }

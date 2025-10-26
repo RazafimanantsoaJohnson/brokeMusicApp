@@ -65,9 +65,10 @@ func main() {
 	})
 	mux.HandleFunc("POST /api/signup", config.HandleSignup)
 	mux.HandleFunc("POST /api/signin", config.HandleSignin)
-	mux.HandleFunc("GET /api/albums", config.middlewareCheckAuth(config.HandleSearchAlbum))
-	mux.HandleFunc("GET /api/albums/{albumId}/tracks", config.middlewareCheckAuth(config.HandleGetAlbumTracks))
-	mux.HandleFunc("GET /api/albums/{albumId}/tracks/{trackId}", config.middlewareCheckAuth(config.HandleGetTrack))
+	mux.HandleFunc("GET /api/albums", config.middlewareCheckAuth(HandleSearchAlbum))
+	mux.HandleFunc("GET /api/albums/{albumId}/tracks", config.middlewareCheckAuth(HandleGetAlbumTracks))
+	mux.HandleFunc("GET /api/albums/{albumId}/tracks/{trackId}", config.middlewareCheckAuth(HandleGetTrack))
+	mux.HandleFunc("GET /api/users/favorites", config.middlewareCheckAuth(HandleGetUserVisitedAlbums))
 
 	server := &http.Server{
 		Addr:              ":" + config.port,
