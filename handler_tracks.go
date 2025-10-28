@@ -94,10 +94,8 @@ func HandleGetTrack(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, 
 	trackId := r.PathValue("trackId")
 	queryParams := r.URL.Query()
 	retryParam := queryParams.Get("retry")
-	directStreamParam := queryParams.Get("directStream")
 
 	isRetry := (retryParam != "")
-	isDirectStream := (directStreamParam != "")
 
 	id, err := uuid.Parse(trackId)
 	if err != nil {
@@ -109,17 +107,6 @@ func HandleGetTrack(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, 
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
-		return
-	}
-
-	if isDirectStream && dbTrack.Fileurl.Valid {
-
-		err = serveFile(w, r, dbTrack)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-		}
-
 		return
 	}
 
@@ -168,6 +155,30 @@ func HandleGetTrack(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, 
 		ID:         dbTrack.ID,
 		Youtubeurl: dbTrack.Youtubeurl,
 	})
+}
+
+func HandleServeTrackFile(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	trackId := r.PathValue("trackId")
+	id, err := uuid.Parse(trackId)
+
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	dbTrack, err := cfg.db.FetchTrack(context.Background(), id)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	err = serveFile(w, r, dbTrack)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+	}
 }
 
 func fetchAlbumTracks(cfg *ApiConfig, albumId string) ([]trackResponse, bool, error) {
