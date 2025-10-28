@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/spotify"
@@ -111,12 +112,24 @@ func HandleGetTrack(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, 
 	}
 
 	// add a forced refresh
-	if !dbTrack.Youtubeurl.Valid || isRetry {
+	// check if the file exists, check if youtubeUrl is valid, check if we can fetch youtubeUrl
+	isRetryValid := true
+	if dbTrack.Fileurl.Valid {
+		_, err = os.Stat(dbTrack.Fileurl.String)
+		if !(err != nil && os.IsNotExist(err)) {
+			isRetryValid = false
+		}
+	}
+	if isRetryValid && dbTrack.Youtubeurl.Valid {
+		isRetryValid = !(checkYoutubeUrlResponse(dbTrack.Youtubeurl.String))
+	}
+	if isRetryValid && isRetry {
 		resultChan := make(chan YtDlpTaskResult)
 		mutex.Lock()
 		pushTask(&Tasks, YtDlpTask{
 			YoutubeId:  dbTrack.Youtubeid.String,
 			AlbumId:    dbTrack.Albumid.String,
+			TrackId:    dbTrack.ID,
 			Priority:   1,
 			ResultChan: resultChan,
 		})
