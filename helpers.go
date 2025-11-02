@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
@@ -257,9 +258,19 @@ func serveFile(w http.ResponseWriter, r *http.Request, track database.Track) err
 	}
 	defer file.Close()
 	fileMetadata, err := file.Stat()
+
 	if err != nil {
 		return err
 	}
+	contentLength := fmt.Sprintf("%v", fileMetadata.Size())
+	mimeType := "audio/"
+	if strings.Contains(fileMetadata.Name(), ".m4a") {
+		mimeType += "mp4"
+	} else {
+		mimeType += "mpeg"
+	}
+	w.Header().Add("Content-Type", mimeType)
+	w.Header().Add("Content-Length", contentLength)
 	http.ServeContent(w, r, fileMetadata.Name(), fileMetadata.ModTime(), file)
 	return nil
 }

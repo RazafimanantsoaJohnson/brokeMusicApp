@@ -68,8 +68,8 @@ func main() {
 	mux.HandleFunc("GET /api/albums", config.middlewareCheckAuth(HandleSearchAlbum))
 	mux.HandleFunc("GET /api/albums/{albumId}/tracks", config.middlewareCheckAuth(HandleGetAlbumTracks))
 	mux.HandleFunc("GET /api/albums/{albumId}/tracks/{trackId}", config.middlewareCheckAuth(HandleGetTrack))
-	mux.HandleFunc("GET /api/albums/{albumId}/tracks/{trackId}/stream", config.middlewareCheckAuth(HandleServeTrackFile))
 	mux.HandleFunc("GET /api/users/favorites", config.middlewareCheckAuth(HandleGetUserVisitedAlbums))
+	mux.HandleFunc("GET /api/albums/{albumId}/tracks/{trackId}/stream", config.HandleServeTrackFile)
 
 	server := &http.Server{
 		Addr:              ":" + config.port,

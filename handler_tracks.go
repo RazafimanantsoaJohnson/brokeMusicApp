@@ -170,7 +170,7 @@ func HandleGetTrack(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, 
 	})
 }
 
-func HandleServeTrackFile(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) HandleServeTrackFile(w http.ResponseWriter, r *http.Request) {
 	trackId := r.PathValue("trackId")
 	id, err := uuid.Parse(trackId)
 

@@ -14,6 +14,7 @@ import (
 
 type UserVisitedAlbumResponse struct {
 	AlbumId        string `json:"album_id"`
+	Artist         string `json:"artist"`
 	Name           string `json:"album_name"`
 	CoverImageUrl  string `json:"album_cover_url"`
 	ReleaseDate    string `json:"release_date"`
@@ -91,6 +92,7 @@ func HandleGetUserVisitedAlbums(cfg *ApiConfig, curUserId uuid.UUID, w http.Resp
 	for _, userAlbum := range userVisitedAlbums {
 		result = append(result, UserVisitedAlbumResponse{
 			AlbumId:        userAlbum.ID,
+			Artist:         userAlbum.Artists.String,
 			Name:           userAlbum.Name,
 			CoverImageUrl:  userAlbum.Coverimageurl.String,
 			ReleaseDate:    userAlbum.Releasedate.String,
