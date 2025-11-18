@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
+	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/logging"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/youtube"
 	"github.com/google/uuid"
 )
@@ -111,8 +112,7 @@ func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 					fmt.Println(err)
 				}
 			} else {
-				// should be a logging
-				fmt.Println(err)
+				logging.LogData(err.Error())
 			}
 		}
 
@@ -125,20 +125,17 @@ func downloadFile(cfg *ApiConfig) { // we probably don't want to see the errors
 			ytUrl := fmt.Sprintf("%s?v=%s", youtubeBaseUrl, task.YoutubeId)
 			err = youtube.DownloadVideo(ytUrl, filePath)
 			if err != nil {
-				// should be a logging of err
-				fmt.Println(err)
+				logging.LogData(err.Error())
 			}
 			continue
 		} else {
 			tmpFile, err := os.Create(fileName) // will change to createTemp
 			if err != nil {
-				// should be a logging
-				fmt.Println(err)
+				logging.LogData(err.Error())
 			}
 			_, err = io.Copy(tmpFile, response.Body)
 			if err != nil {
-				// should be a logging
-				fmt.Println(err)
+				logging.LogData(err.Error())
 			}
 
 			tmpFile.Close()
@@ -212,14 +209,14 @@ func worker(id int, cfg *ApiConfig) {
 		if len(extractedJson) <= 0 {
 			err = cfg.db.SetTrackAsUnavailable(context.Background(), task.TrackId)
 			if err != nil {
-				// should be a logging
-				fmt.Println(err)
+				logging.LogData(err.Error())
 			}
 			if task.ResultChan != nil {
 				task.ResultChan <- YtDlpTaskResult{
 					err: fmt.Errorf("unable to get the track's data"),
 				}
 			}
+			continue
 		}
 
 		result.result = extractedJson[0]
@@ -227,8 +224,7 @@ func worker(id int, cfg *ApiConfig) {
 
 		tmp_track, err := cfg.db.GetTrackFromId(context.Background(), task.TrackId)
 		if err != nil {
-			// should be a logging
-			fmt.Println(err)
+			logging.LogData(err.Error())
 		}
 		if !tmp_track.Fileurl.Valid {
 			DownloadTasks = append(DownloadTasks, YtDownloadTask{

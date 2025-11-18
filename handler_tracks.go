@@ -29,6 +29,7 @@ type trackResponse struct {
 
 func HandleGetAlbumTracks(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	albumId := r.PathValue("albumId")
+	tracksResponse := []database.Track{}
 
 	queriedAlbum, err := cfg.db.GetAlbumFromSpotifyId(context.Background(), albumId)
 	if err != nil {
@@ -66,10 +67,15 @@ func HandleGetAlbumTracks(cfg *ApiConfig, curUserId uuid.UUID, w http.ResponseWr
 	}
 
 	if !areTracksLoaded {
-		go saveAlbumTracksInDB(cfg, albumId, albumTracks, queriedAlbum)
+		tracksResponse, err = saveAlbumTracksInDB(cfg, albumId, albumTracks, queriedAlbum)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
 	}
 
-	jsonTracks, err := json.Marshal(&albumTracks.Tracks.Items)
+	jsonTracks, err := json.Marshal(&tracksResponse)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
@@ -221,15 +227,16 @@ func fetchAlbumTracks(cfg *ApiConfig, albumId string) ([]trackResponse, bool, er
 	return result, true, nil
 }
 
-func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumResponse, album database.GetAlbumFromSpotifyIdRow) error {
+func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumResponse, album database.GetAlbumFromSpotifyIdRow) ([]database.Track, error) {
 	fmt.Println("We are saving the tracks in DB")
+	results := make([]database.Track, len(tracks.Tracks.Items))
 	for i := range tracks.Tracks.Items {
 		track := tracks.Tracks.Items[i]
 		searchQuery := fmt.Sprintf("%s %s", album.Artists.String, track.Name)
 		ytSearchResult, err := youtube.Search(cfg.ytApiKey, searchQuery)
 		ytTrackId := sql.NullString{String: "", Valid: false}
 		if err != nil {
-			return err
+			return results, err
 		}
 		if len(ytSearchResult.Items) > 0 {
 			ytTrackId = sql.NullString{String: ytSearchResult.Items[0].Id.VideoId, Valid: true}
@@ -246,15 +253,16 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 			Youtubeid:       ytTrackId,
 		})
 		if err != nil {
-			return err
+			return results, err
 		}
+		results[i] = newTrack
 
 		if !ytTrackId.Valid {
 			err = cfg.db.SetTrackAsUnavailable(context.Background(), newTrack.ID)
 			if err != nil {
-				return err
+				return results, err
 			}
-			return fmt.Errorf("unable to find track")
+			return results, fmt.Errorf("unable to find track")
 		}
 		// launching yt-dlp task
 		mutex.Lock()
@@ -266,5 +274,5 @@ func saveAlbumTracksInDB(cfg *ApiConfig, albumId string, tracks spotify.AlbumRes
 		})
 		mutex.Unlock()
 	}
-	return nil
+	return results, nil
 }

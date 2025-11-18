@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/logging"
 )
 
 func checkYoutubeUrlResponse(trackUrl string) bool {
@@ -12,8 +14,7 @@ func checkYoutubeUrlResponse(trackUrl string) bool {
 	defer cancel()
 	ytUrlResponse, err := http.Get(trackUrl)
 	if err != nil {
-		// should be a logging
-		fmt.Println(err)
+		logging.LogData(err.Error())
 		return false
 	}
 	waitTimeOver := <-ctxWithTimeout.Done()
