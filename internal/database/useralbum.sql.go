@@ -13,14 +13,9 @@ import (
 )
 
 const getUserRecentlyVisitedAlbums = `-- name: GetUserRecentlyVisitedAlbums :many
-
 SELECT id, name, coverimageurl, releasedate, artists, spotifyurl, jsontracklist, created_on, updated_on, numberoftracks FROM albums WHERE id IN (SELECT DISTINCT user_album.albumId FROM user_album WHERE user_album.userId = $1)
 `
 
-// SELECT DISTINCT user_album_join.albumId FROM
-//
-//	(SELECT user_album.albumId, albums.name, albums.id, albums.coverimageurl, albums.releasedate, albums.numberoftracks, user_album.created_on
-//	    FROM user_album INNER JOIN albums ON user_album.albumId=albums.id WHERE userId = $1 ORDER BY user_album.created_on DESC) AS user_album_join LIMIT 10;
 func (q *Queries) GetUserRecentlyVisitedAlbums(ctx context.Context, userid uuid.NullUUID) ([]Album, error) {
 	rows, err := q.db.QueryContext(ctx, getUserRecentlyVisitedAlbums, userid)
 	if err != nil {

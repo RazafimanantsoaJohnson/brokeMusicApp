@@ -24,6 +24,14 @@ type Album struct {
 	Numberoftracks int32
 }
 
+type RefreshToken struct {
+	Token     string
+	CreatedOn time.Time
+	UpdatedOn time.Time
+	Revokedat sql.NullTime
+	Userid    uuid.UUID
+}
+
 type Track struct {
 	ID              uuid.UUID
 	Youtubeid       sql.NullString

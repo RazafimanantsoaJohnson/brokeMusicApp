@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
+	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/logging"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/spotify"
 	"github.com/google/uuid"
 )
@@ -65,7 +65,7 @@ func saveAlbumsInDB(cfg *ApiConfig, searchResponse spotify.SearchResponse) {
 		if err != nil && err.Error() == "pq: duplicate key value violates unique constraint \"albums_pkey\"" {
 			continue
 		} else if err != nil {
-			log.Fatal(err.Error()) // should keep the log somewhere instead of crash the system
+			logging.LogData(err.Error())
 		}
 	}
 }

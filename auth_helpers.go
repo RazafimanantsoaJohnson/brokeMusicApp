@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/auth"
+	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -24,4 +26,20 @@ func (cfg *ApiConfig) middlewareCheckAuth(next func(*ApiConfig, uuid.UUID, http.
 
 		next(cfg, curUserId, w, r)
 	}
+}
+
+func createRefreshToken(cfg *ApiConfig, userId uuid.UUID) (string, error) {
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		return "", err
+	}
+
+	_, err = cfg.db.CreateRefreshToken(context.Background(), database.CreateRefreshTokenParams{
+		Token:  refreshToken,
+		Userid: userId,
+	})
+	if err != nil {
+		return "", err
+	}
+	return refreshToken, nil
 }

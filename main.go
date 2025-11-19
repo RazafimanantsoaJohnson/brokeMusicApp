@@ -65,6 +65,7 @@ func main() {
 	})
 	mux.HandleFunc("POST /api/signup", config.HandleSignup)
 	mux.HandleFunc("POST /api/signin", config.HandleSignin)
+	mux.HandleFunc("POST /api/signin/refresh", config.HandleRefreshToken)
 	mux.HandleFunc("GET /api/albums", config.middlewareCheckAuth(HandleSearchAlbum))
 	mux.HandleFunc("GET /api/albums/{albumId}/tracks", config.middlewareCheckAuth(HandleGetAlbumTracks))
 	mux.HandleFunc("GET /api/albums/{albumId}/tracks/{trackId}", config.middlewareCheckAuth(HandleGetTrack))

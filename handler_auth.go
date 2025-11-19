@@ -30,7 +30,8 @@ type UserResponse struct {
 }
 
 type SigninResponse struct {
-	Token string `json:"token"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func (cfg *ApiConfig) HandleSignup(w http.ResponseWriter, r *http.Request) {
@@ -123,8 +124,52 @@ func (cfg *ApiConfig) HandleSignin(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+
+	refreshToken, err := createRefreshToken(cfg, dbUser.ID)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	response := SigninResponse{
-		Token: token,
+		Token:        token,
+		RefreshToken: refreshToken,
+	}
+
+	returnJson(w, response)
+}
+
+func (cfg *ApiConfig) HandleRefreshToken(w http.ResponseWriter, r *http.Request) {
+	refreshToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		w.WriteHeader(401)
+		w.Write([]byte("unauthorized user"))
+		return
+	}
+
+	dbToken, err := cfg.db.GetTokenById(context.Background(), refreshToken)
+	if err != nil {
+		w.WriteHeader(401)
+		w.Write([]byte("unauthorized user"))
+		return
+	}
+
+	if dbToken.Revokedat.Valid {
+		w.WriteHeader(401)
+		w.Write([]byte("unauthorized user"))
+		return
+	}
+
+	newAccessToken, err := auth.MakeJWT(dbToken.Userid, cfg.jwtSecret, 1*time.Hour)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte("unable to generate access token"))
+		return
+	}
+
+	response := SigninResponse{
+		Token: newAccessToken,
 	}
 
 	returnJson(w, response)
