@@ -7,22 +7,24 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
 
 const createRefreshToken = `-- name: CreateRefreshToken :one
-INSERT INTO refresh_token(token, userId) 
-VALUES ($1, $2) RETURNING token, created_on, updated_on, revokedat, userid
+INSERT INTO refresh_tokens(token, userId, revokedAt) 
+VALUES ($1, $2, $3) RETURNING token, created_on, updated_on, revokedat, userid
 `
 
 type CreateRefreshTokenParams struct {
-	Token  string
-	Userid uuid.UUID
+	Token     string
+	Userid    uuid.UUID
+	Revokedat sql.NullTime
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error) {
-	row := q.db.QueryRowContext(ctx, createRefreshToken, arg.Token, arg.Userid)
+	row := q.db.QueryRowContext(ctx, createRefreshToken, arg.Token, arg.Userid, arg.Revokedat)
 	var i RefreshToken
 	err := row.Scan(
 		&i.Token,
@@ -35,7 +37,7 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 }
 
 const getTokenById = `-- name: GetTokenById :one
-SELECT token, created_on, updated_on, revokedat, userid FROM refresh_token WHERE token=$1 LIMIT 1
+SELECT token, created_on, updated_on, revokedat, userid FROM refresh_tokens WHERE token=$1 LIMIT 1
 `
 
 func (q *Queries) GetTokenById(ctx context.Context, token string) (RefreshToken, error) {
@@ -52,7 +54,7 @@ func (q *Queries) GetTokenById(ctx context.Context, token string) (RefreshToken,
 }
 
 const revokeToken = `-- name: RevokeToken :exec
-UPDATE refresh_token SET revokedAt=NOW() WHERE token=$1
+UPDATE refresh_tokens SET revokedAt=NOW() WHERE token=$1
 `
 
 func (q *Queries) RevokeToken(ctx context.Context, token string) error {

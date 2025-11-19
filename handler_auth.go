@@ -155,9 +155,9 @@ func (cfg *ApiConfig) HandleRefreshToken(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if dbToken.Revokedat.Valid {
+	if dbToken.Revokedat.Valid && dbToken.Revokedat.Time.Before(time.Now()) {
 		w.WriteHeader(401)
-		w.Write([]byte("unauthorized user"))
+		w.Write([]byte("token expired"))
 		return
 	}
 

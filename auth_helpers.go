@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
+	"time"
 
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/auth"
 	"github.com/RazafimanantsoaJohnson/brokeMusicApp/internal/database"
@@ -35,8 +37,9 @@ func createRefreshToken(cfg *ApiConfig, userId uuid.UUID) (string, error) {
 	}
 
 	_, err = cfg.db.CreateRefreshToken(context.Background(), database.CreateRefreshTokenParams{
-		Token:  refreshToken,
-		Userid: userId,
+		Token:     refreshToken,
+		Userid:    userId,
+		Revokedat: sql.NullTime{Valid: true, Time: time.Now().Add(RefreshTokenDurationInMonth * (30 * 24) * time.Hour)},
 	})
 	if err != nil {
 		return "", err
