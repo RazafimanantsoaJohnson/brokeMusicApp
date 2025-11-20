@@ -13,8 +13,8 @@
 
 ## How it works:
  There was 2 big parts to resolving this problem:
-     - How to get albums' data with the tracks they contain and their order
-     - Where to find the actula albums' audio tracks
+    - How to get albums' data with the tracks they contain and their order
+    - Where to find the actula albums' audio tracks
  1. For the albums' data ; I registered for spotify API to authenticate and getaccess to those data.
  2. For the audio tracks, I registered for youtube API (to search for the youtube url of each track in the album); and use *yt-dlp* to get the audio streaming url for the clients to be able to consume those streaming url right away. On the background the audios are downloaded in the server to build up the *'local music bank'* and use less and less youtube streaming url (avoiding issues like expiration or permission blocks at terms).
 
@@ -53,6 +53,8 @@
   - Execute:
   `
       $go get .
+  `
+  `
       $ goose postgres "postgres://username:password@localhost:port/brokemusicapp" up
   `
 
@@ -69,4 +71,4 @@
 ## Notes:
 To prevent the server from crashing, background work, and ensure concurrency on users requests for track's streaming urls, the app has a set number of *'dedicated worker go routines'* to interact with yt-dlp, set the found value in DB and if necessary, return the found value to the user request.
 
-![userRequest_taskQueue_worker illustration](https://github.com/RazafimanantsoaJohnson/brokemusicapp/resources/request_taskQueue_worker_illustration.png)
+![userRequest_taskQueue_worker illustration](https://github.com/RazafimanantsoaJohnson/brokeMusicApp/blob/main/resources/request_taskQueue_worker_illustration.png)
