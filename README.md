@@ -13,8 +13,8 @@
 
 ## How it works:
  There was 2 big parts to resolving this problem:
-    - How to get albums' data with the tracks they contain and their order
-    - Where to find the actula albums' audio tracks
+  - How to get albums' data with the tracks they contain and their order
+  - Where to find the actula albums' audio tracks
  1. For the albums' data ; I registered for spotify API to authenticate and getaccess to those data.
  2. For the audio tracks, I registered for youtube API (to search for the youtube url of each track in the album); and use *yt-dlp* to get the audio streaming url for the clients to be able to consume those streaming url right away. On the background the audios are downloaded in the server to build up the *'local music bank'* and use less and less youtube streaming url (avoiding issues like expiration or permission blocks at terms).
 
@@ -44,7 +44,7 @@
 ## How to install:
   - PREREQUISITE softwares: **Go, PostgreSQL, Goose** 
   - The running computer needs to have **yt-dlp** installed and available as a running executable.
-  - Environment variable (maybe provided by a **'.env'** file):
+  - Environment variable ( provided in a **'.env'** file):
       DB_URL (url of the database connection)
       PORT (the port the server will listen to)
       SPOTIFY_CLIENTID (ID of our spotify registered app to enable OAuth)
