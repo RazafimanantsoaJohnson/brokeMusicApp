@@ -71,4 +71,9 @@
 ## Notes:
 To prevent the server from crashing, enable background work, and ensure concurrency on users requests for track's streaming urls, the app has a set number of *'dedicated worker go routines'* to interact with yt-dlp, set the found value in DB ,and if necessary return the found value to the user request.
 
+Motivation
+Quick Start
+Usage
+Contributing
+
 ![userRequest_taskQueue_worker illustration](https://github.com/RazafimanantsoaJohnson/brokeMusicApp/blob/main/resources/request_taskQueue_worker_illustration.png)
